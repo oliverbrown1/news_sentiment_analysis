@@ -1,4 +1,4 @@
-This is a News Sentiment Analysis program for my University Software Engineering Module CS261 group coursework. 
+This is a News Sentiment Analysis program that extracts news articles related to a company from trusted sources and determines the sentiment of retrieved articles.
 
 This program uses the following API's and libraries: **News API, newspaper3k, Transformers by Hugging Face and Pytorch**
 
