@@ -183,6 +183,7 @@ def run_test_to_run_news_module(company):
 def test_model_accuracy():
 
     match_count = 0
+    total = 0
     filename = 'Sentences_50Agree.txt'
     with open(filename, 'r', encoding='latin-1') as file:
         lines = file.readlines()
@@ -194,14 +195,13 @@ def test_model_accuracy():
 
     for i, sentence in enumerate(sentences):
         calculated_sentiment = analyse_article("", sentence, sentiment_model)
+        total += 1
 
         if calculated_sentiment == sentiments[i]:
             match_count += 1
         else:
-            print("match not found i.e.")
-            print(f"{i}:{calculated_sentiment} found but {sentiments[i]} should be calculated")
+            print(f"match not found: {i}:{calculated_sentiment} found but {sentiments[i]} should be calculated")
 
-    return match_count
+    return match_count / total
 
-
-# print(test_model_accuracy())
+print(f"{test_model_accuracy()} accurate")
