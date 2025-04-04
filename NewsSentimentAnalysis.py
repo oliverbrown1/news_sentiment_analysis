@@ -4,6 +4,7 @@
 from newspaper import Article, Config, ArticleException
 import nltk
 import ssl
+import config 
 
 # NewsAPI library used to fetch news articles and their basic information (excluding content) given a company name
 from newsapi import NewsApiClient
@@ -35,13 +36,8 @@ try:
 except LookupError:
     nltk.download('punkt')
 
-key1 = '032c11aeaff84f149dbc9f971ef0a389'
-key2 = 'cb70c704f3ba45818a47bd837d839652'
-key3 = '63e1e78f238e4447a6cc7c785d2477cd'
-key4 = '90853302850843549a1304d7ff1a353f'
-
 # NewsAPI key
-newsapi = NewsApiClient(api_key=key1)
+newsapi = NewsApiClient(api_key=config.API_KEY)
 
 
 # fetch news using newsAPI key and given company
@@ -208,4 +204,4 @@ def test_model_accuracy():
     return match_count
 
 
-print(test_model_accuracy())
+# print(test_model_accuracy())
