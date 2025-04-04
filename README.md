@@ -9,4 +9,6 @@ With the following features:
   - Provide a summary of news article (for Sentiment Analysis)
   - Perform Sentiment Analysis on a summary of a news article (pre-trained on financial news data)
 
-Simply (pip) install any dependencies, and run the python file.
+Simply (pip) install dependencies using requirements.txt and run NewsSentimentAnalysis.py
+
+``pip install -r requirements.txt && python NewsSentimentAnalysis.py``
