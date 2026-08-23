@@ -1,5 +1,13 @@
 .idea
 venv
 nsa
-config.py
+/config.py
 *.pyc
+.env
+.venv
+__pycache__/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+docs/PLAN.MD
