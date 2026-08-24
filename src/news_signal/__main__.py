@@ -1,3 +1,3 @@
-from news_signal.cli import main
+from news_signal.entrypoints.cli import main
 
 raise SystemExit(main())

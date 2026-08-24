@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "news-signal"
-version = "0.1.0"
+version = "1.0.0"
 description = "Financial news sentiment analysis pipeline"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -18,11 +18,11 @@ dependencies = [
     "transformers>=4.50,<5",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["pytest>=8.3,<9"]
 
 [project.scripts]
-news-signal = "news_signal.cli:main"
+news-signal = "news_signal.entrypoints.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

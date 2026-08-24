@@ -1,6 +1,6 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-24
 
 ## Purpose
 
@@ -19,22 +19,23 @@ performance. Do not make predictive claims until the planned backtest exists.
 
 ```text
 src/news_signal/
-  application.py   # constructs production adapters and pipeline
-  cli.py           # argparse CLI and JSON output
+  entrypoints/
+    cli.py         # argparse CLI and JSON output
+    tools.py       # reusable agent-compatible callable
+  adapters.py      # external service and model integrations
+  application.py   # constructs the production pipeline
   config.py        # environment configuration
-  extraction.py    # newspaper3k adapter
-  interfaces.py    # typed Protocol contracts
   models.py        # typed immutable result models
-  pipeline.py      # application orchestration
-  providers.py     # NewsAPI adapter and source allowlist
-  sentiment.py     # lazy Hugging Face classifier
+  pipeline.py      # protocols and application orchestration
 tests/             # offline pytest tests
 ```
 
 Other important files:
 
-- `pyproject.toml` defines the package, dependencies, pytest configuration, and
-  `news-signal` console command.
+- `pyproject.toml` defines the package, dependency groups, pytest configuration,
+  and `news-signal` console command.
+- `uv.lock` records the resolved, reproducible dependency environment.
+- `.python-version` pins project commands to Python 3.12.
 - `.env.example` documents safe runtime configuration.
 - `Sentences_50Agree.txt` contains 300 labelled Financial PhraseBank examples.
 - `NewsSentimentAnalysis.py` is a compatibility wrapper for the CLI; new code
@@ -44,12 +45,12 @@ Other important files:
 ## Runtime Flow
 
 ```text
-CLI arguments + environment
+CLI or tool arguments + environment
     -> NewsApiProvider.fetch
     -> NewspaperArticleExtractor.extract
     -> HuggingFaceSentimentClassifier.classify
     -> NewsAnalysisPipeline result
-    -> JSON to stdout
+    -> dictionary for a tool, or JSON to stdout
 ```
 
 `NewsAnalysisPipeline` depends on the `NewsProvider`, `ArticleExtractor`, and
@@ -62,27 +63,41 @@ and classifier failures currently propagate to the caller.
 
 ## Setup and Commands
 
-Use Python 3.11 or newer:
+Use `uv` for environment and dependency management:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements-dev.txt
+uv sync
 cp .env.example .env
-python -m nltk.downloader punkt punkt_tab
+uv run python -m nltk.downloader punkt punkt_tab
 ```
 
 Run an analysis:
 
 ```bash
-news-signal analyse --company "NVIDIA" --limit 5 --days 7
+uv run news-signal analyse --company "NVIDIA" --limit 5 --days 7
 ```
+
+Create a reusable agent tool:
+
+```python
+from news_signal.entrypoints.tools import build_tools
+
+tools = build_tools()
+result = tools.analyse_company_news("NVIDIA", limit=5)
+```
+
+Build the tool object once per agent process. It retains the pipeline and avoids
+reconstructing the lazy-loaded classifier for each tool call.
 
 Run the offline unit suite:
 
 ```bash
-pytest
+uv run pytest
 ```
+
+Use `uv add`, `uv remove`, and `uv lock` for dependency changes, and `uv build`
+for package artifacts. Do not introduce pip requirements files alongside the
+`pyproject.toml` and `uv.lock` sources of truth.
 
 The first production analysis can download the configured Hugging Face model.
 It also makes requests to NewsAPI and publisher websites. Tests and imports must
@@ -126,7 +141,8 @@ per-class metrics, confusion matrix, latency, and failures.
 - Preserve source URLs, timestamps, confidence, and failure details.
 - Do not globally disable TLS verification or download resources at import time.
 - Keep deterministic scoring separate from model-generated output.
-- Do not add agent or API abstractions before the relevant plan step.
+- Keep CLI, tool, and future API translation inside `entrypoints/`; do not put
+  transport-specific behavior in the pipeline.
 
 ## Current Limitations
 
@@ -135,7 +151,7 @@ per-class metrics, confusion matrix, latency, and failures.
   and local NLTK tokenizer data.
 - The source allowlist is hard-coded.
 - Only article-extraction failures are represented as partial results.
-- There is no API, persistence, tracing, deployment, event extraction, company
+- There is no HTTP API, persistence, tracing, deployment, event extraction, company
   signal aggregation, or performance backtest yet.
 - The Financial PhraseBank evaluator has not been migrated into the package.
 

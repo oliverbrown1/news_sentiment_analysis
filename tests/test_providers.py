@@ -1,4 +1,4 @@
-from news_signal.providers import NewsApiProvider
+from news_signal.adapters import NewsApiProvider
 
 
 class FakeNewsApiClient:

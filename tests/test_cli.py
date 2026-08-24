@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from news_signal import cli
+from news_signal.entrypoints import cli
 from news_signal.models import AnalysisResult
 
 

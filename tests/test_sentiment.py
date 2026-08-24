@@ -1,7 +1,7 @@
 import pytest
 
 from news_signal.models import SentimentResult
-from news_signal.sentiment import HuggingFaceSentimentClassifier
+from news_signal.adapters import HuggingFaceSentimentClassifier
 
 
 class FakeTransformersPipeline:
