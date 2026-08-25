@@ -12,6 +12,14 @@ DEFAULT_MODEL = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analys
 class ConfigurationError(ValueError):
     pass
 
+# separated for eval which does not need NEWS_API_KEY
+def load_sentiment_model_name() -> str:
+    load_dotenv(Path.cwd() / ".env")
+    model = os.getenv("SENTIMENT_MODEL", DEFAULT_MODEL).strip()
+    if not model:
+        raise ConfigurationError("SENTIMENT_MODEL cannot be empty")
+    return model
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
@@ -35,8 +43,4 @@ class Settings:
         if lookback_days < 1:
             raise ConfigurationError("NEWS_LOOKBACK_DAYS must be at least 1")
 
-        model = os.getenv("SENTIMENT_MODEL", DEFAULT_MODEL).strip()
-        if not model:
-            raise ConfigurationError("SENTIMENT_MODEL cannot be empty")
-
-        return cls(api_key, lookback_days, model)
+        return cls(api_key, lookback_days, load_sentiment_model_name())

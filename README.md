@@ -22,6 +22,9 @@ The optional settings control the default lookback period and Hugging Face model
 ```bash
 uv run news-signal analyse --company "NVIDIA" --limit 5
 uv run news-signal analyse --company "Rolls-Royce Holdings" --days 14
+
+# evaluation also possible
+uv run news-signal evaluate-sentiment --output reports/finentity-sentiment.json
 ```
 
 The same pipeline can be exposed as a typed agent tool:
@@ -37,18 +40,19 @@ Create `tools` once when the agent process starts so repeated calls reuse the
 same pipeline and loaded sentiment model.
 
 The first real analysis may download the configured Hugging Face model, pending fix to this cold start issue. 
+## Evaluation and Testing
 
-## Tests
+The classifier can be evaluated (see Usage section), uses FinEntity dataset containing short financial summaries and labelled sentiment.
+
+Reports dataset checksum, model revision, metrics (accuracy, F1, recall, per sentiment class metrics, confusion matrix, mean confidence, mean latency)
+
+For structural/integrity unit tests, execute the below
 
 ```bash
 uv run pytest
 ```
 
-The unit tests use fake providers and classifiers, so they do not need an API
-key, network access, NLTK data, or model download.
-
-Build the package with `uv build`. Add or remove dependencies with `uv add` and
-`uv remove`; commit both `pyproject.toml` and `uv.lock` after dependency changes.
+The unit tests use fake providers and classifiers, so they do not need an API key, network access, NLTK data, or model download.
 
 ## How It Works
 
@@ -58,6 +62,7 @@ Build the package with `uv build`. Add or remove dependencies with `uv add` and
 
 ## Backlog
 
-* 300-row Financial PhraseBank subset for evaluation within `Sentences_50Agree.txt`, also further research for better evaluation set/method for evaluating the pipeline
+* 300-row Financial PhraseBank subset retained as a legacy regression benchmark within `Sentences_50Agree.txt`
 * Review Python libraries used for scraping (newsapi), extraction (newspaper3k), summarisation (NLTK) and sentiment analysis (DistilRoBERTa)
 * Use sentiment output and other signals to predict company performance, using Agentic AI pipeline
+* Use FinMarBa for later evaluation of the agentic pipeline - evaluation dataset which shows how market performs/move after headlines, not just sentiment.

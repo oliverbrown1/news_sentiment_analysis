@@ -118,7 +118,21 @@ class HuggingFaceSentimentClassifier:
             raise ValueError(f"unsupported sentiment label: {raw_label}")
         return SentimentResult(label=label, confidence=float(output["score"]))
 
+    def load(self) -> None:
+        self._load_classifier()
+
+    @property
+    def model_revision(self) -> str | None:
+        if self._classifier is None:
+            return None
+        model = getattr(self._classifier, "model", None)
+        config = getattr(model, "config", None)
+        revision = getattr(config, "_commit_hash", None)
+        return str(revision) if revision else None
+
     def _load_classifier(self) -> Any:
+        if self._classifier is not None:
+            return self._classifier
         from transformers import pipeline
 
         self._classifier = pipeline(

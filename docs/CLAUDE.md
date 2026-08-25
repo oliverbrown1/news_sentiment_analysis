@@ -127,9 +127,17 @@ The classifier retains both the normalized label and model confidence, and
 enables input truncation. Model loading is lazy.
 
 `Sentences_50Agree.txt` uses `sentence@label` rows. The historical repository
-and CV claim 92% accuracy, but that figure has not yet been reproduced against
-the packaged implementation. Step 2 must record model revision, dataset version,
-per-class metrics, confusion matrix, latency, and failures.
+and CV claim approximately 92% accuracy; the current model reproduces 91.03%
+accuracy and 67.07% macro F1 across its 301 heavily imbalanced examples. Treat
+this only as a legacy regression result because the model was trained on the
+same source corpus.
+
+`data/finentity.json` is pinned at its upstream revision and evaluated through
+`news-signal evaluate-sentiment`. The report scores entity annotations and
+includes accuracy, macro F1, per-class metrics, confusion matrix, calibration,
+mean latency, dataset diagnostics, and a mixed-sentiment slice.
+The current classifier is sequence-level and does not receive the target entity;
+this limitation must remain explicit when interpreting FinEntity results.
 
 ## Development Rules
 
@@ -153,7 +161,8 @@ per-class metrics, confusion matrix, latency, and failures.
 - Only article-extraction failures are represented as partial results.
 - There is no HTTP API, persistence, tracing, deployment, event extraction, company
   signal aggregation, or performance backtest yet.
-- The Financial PhraseBank evaluator has not been migrated into the package.
+- The Financial PhraseBank subset remains a legacy dataset and is not yet wired
+  into the packaged evaluator.
 
 Continue with one numbered step from `docs/PLAN.MD` at a time. Step 1 is
-complete; Step 2 is the next planned change.
+complete, Step 2 is complete, and Step 3 is the next planned change.

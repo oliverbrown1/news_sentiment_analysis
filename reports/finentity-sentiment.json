@@ -1,0 +1,345 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-25T11:53:04.502760+00:00",
+  "task": {
+    "name": "entity-level financial sentiment",
+    "unit": "entity annotation",
+    "input": "paragraph content only",
+    "target_usage": "target is evaluated but not provided to the current classifier"
+  },
+  "dataset": {
+    "name": "FinEntity",
+    "path": "data/finentity.json",
+    "source": "https://github.com/yixuantt/FinEntity",
+    "revision": "3b6cedc5485b669c2ed168f1d949f517636eb7b8",
+    "sha256": "3208667de69383120b0380aebeaabe360669eda72269c33e1c8b09d63df55463",
+    "paragraphs": 979,
+    "annotations": 2131,
+    "label_distribution": {
+      "positive": 503,
+      "negative": 498,
+      "neutral": 1130
+    },
+    "diagnostics": {
+      "span_mismatches": 70,
+      "duplicate_annotations": 101,
+      "targets_with_conflicting_labels": 9
+    }
+  },
+  "model": {
+    "name": "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis",
+    "revision": "ae0eab9ad336d7d548e0efe394b07c04bcaf6e91"
+  },
+  "metrics": {
+    "evaluated_annotations": 2131,
+    "accuracy": 0.6902862505865791,
+    "macro_f1": 0.695837056122343,
+    "per_class": {
+      "negative": {
+        "precision": 0.6412103746397695,
+        "recall": 0.893574297188755,
+        "f1": 0.7466442953020134,
+        "support": 498,
+        "predicted": 694
+      },
+      "neutral": {
+        "precision": 0.9620689655172414,
+        "recall": 0.49380530973451325,
+        "f1": 0.6526315789473685,
+        "support": 1130,
+        "predicted": 580
+      },
+      "positive": {
+        "precision": 0.5460910151691949,
+        "recall": 0.9304174950298211,
+        "f1": 0.6882352941176472,
+        "support": 503,
+        "predicted": 857
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "negative",
+        "neutral",
+        "positive"
+      ],
+      "rows": [
+        [
+          445,
+          11,
+          42
+        ],
+        [
+          225,
+          558,
+          347
+        ],
+        [
+          24,
+          11,
+          468
+        ]
+      ]
+    },
+    "prediction_distribution": {
+      "positive": 857,
+      "negative": 694,
+      "neutral": 580
+    }
+  },
+  "slices": {
+    "mixed_sentiment_paragraphs": {
+      "annotations": 364,
+      "accuracy": 0.489010989010989,
+      "macro_f1": 0.4285851688604678
+    }
+  },
+  "calibration": {
+    "expected_calibration_error": 0.2904237304870538,
+    "mean_confidence": 0.9807099810736328,
+    "mean_confidence_when_correct": 0.98964986859496,
+    "mean_confidence_when_incorrect": 0.9607848681283719,
+    "bins": [
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "count": 34,
+        "accuracy": 0.2647058823529412,
+        "average_confidence": 0.5466374807498035
+      },
+      {
+        "lower": 0.6,
+        "upper": 0.7,
+        "count": 16,
+        "accuracy": 0.125,
+        "average_confidence": 0.6592908203601837
+      },
+      {
+        "lower": 0.7,
+        "upper": 0.8,
+        "count": 29,
+        "accuracy": 0.5517241379310345,
+        "average_confidence": 0.7537417267930919
+      },
+      {
+        "lower": 0.8,
+        "upper": 0.9,
+        "count": 32,
+        "accuracy": 0.5,
+        "average_confidence": 0.8476651832461357
+      },
+      {
+        "lower": 0.9,
+        "upper": 1.0,
+        "count": 2020,
+        "accuracy": 0.7069306930693069,
+        "average_confidence": 0.9959281417107818
+      }
+    ]
+  },
+  "error_analysis": {
+    "misclassified_annotations": 660,
+    "confusion_pairs": {
+      "neutral->positive": 347,
+      "neutral->negative": 225,
+      "negative->positive": 42,
+      "positive->negative": 24,
+      "negative->neutral": 11,
+      "positive->neutral": 11
+    },
+    "highest_confidence_errors": [
+      {
+        "paragraph_id": 840,
+        "annotation_id": 0,
+        "target": "One Medical",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998774528503418,
+        "content": "Amazon agreed to pay $18 for each share of One Medical, representing a premium of 76.8% to the healthcare firm's last close. One Medical shares were trading at $17.27."
+      },
+      {
+        "paragraph_id": 840,
+        "annotation_id": 1,
+        "target": "One Medical",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998774528503418,
+        "content": "Amazon agreed to pay $18 for each share of One Medical, representing a premium of 76.8% to the healthcare firm's last close. One Medical shares were trading at $17.27."
+      },
+      {
+        "paragraph_id": 613,
+        "annotation_id": 0,
+        "target": "Goldman Sachs",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998364448547363,
+        "content": "This said, Katzke's highest conviction recommendations, each with ~30% total return potential are: Goldman Sachs <GS.N>, Wells Fargo <WFC.N>, Bank of America <BAC.N> and JPmorgan Chase <JPM.N>."
+      },
+      {
+        "paragraph_id": 613,
+        "annotation_id": 1,
+        "target": "Wells Fargo",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998364448547363,
+        "content": "This said, Katzke's highest conviction recommendations, each with ~30% total return potential are: Goldman Sachs <GS.N>, Wells Fargo <WFC.N>, Bank of America <BAC.N> and JPmorgan Chase <JPM.N>."
+      },
+      {
+        "paragraph_id": 613,
+        "annotation_id": 2,
+        "target": "Bank of America",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998364448547363,
+        "content": "This said, Katzke's highest conviction recommendations, each with ~30% total return potential are: Goldman Sachs <GS.N>, Wells Fargo <WFC.N>, Bank of America <BAC.N> and JPmorgan Chase <JPM.N>."
+      },
+      {
+        "paragraph_id": 613,
+        "annotation_id": 3,
+        "target": "JPmorgan Chase",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9998364448547363,
+        "content": "This said, Katzke's highest conviction recommendations, each with ~30% total return potential are: Goldman Sachs <GS.N>, Wells Fargo <WFC.N>, Bank of America <BAC.N> and JPmorgan Chase <JPM.N>."
+      },
+      {
+        "paragraph_id": 874,
+        "annotation_id": 0,
+        "target": "Amazon",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9997524619102478,
+        "content": "In case the deal is terminated, Amazon would be required to pay iRobot $94 million in termination fee. On completion of the deal, Colin Angle will remain as the chief executive of iRobot."
+      },
+      {
+        "paragraph_id": 874,
+        "annotation_id": 1,
+        "target": "iRobot",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9997524619102478,
+        "content": "In case the deal is terminated, Amazon would be required to pay iRobot $94 million in termination fee. On completion of the deal, Colin Angle will remain as the chief executive of iRobot."
+      },
+      {
+        "paragraph_id": 859,
+        "annotation_id": 0,
+        "target": "Starwood Property Trust Inc",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9997474551200867,
+        "content": "* Starwood Property Trust Inc <STWD.N> reported quarterly adjusted earnings of 67 cents?? per share for the quarter ended in June. The mean expectation of six analysts for the quarter was for earnings of 51 cents per share."
+      },
+      {
+        "paragraph_id": 49,
+        "annotation_id": 0,
+        "target": "Reuters",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997305274009705,
+        "content": "The announcement confirms a Reuters report from earlier this month and comes as the electric-vehicle maker reported record quarterly revenue and 2022 deliveries growing more than 50%, despite supply chain issues. [nL4N2TT3Q7]"
+      },
+      {
+        "paragraph_id": 86,
+        "annotation_id": 1,
+        "target": "Canalys",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997232556343079,
+        "content": "Though a small player in smartphones overall, Google's sales are accelerating. It shipped 3 million phones in the first half of this year, up 131% on a year ago, according to tracking company Canalys.   (Reporting by Paresh Dave; Editing by Peter Henderson and Richard Pullin)  ((paresh.dave@thomsonreuters.com; 415-565-1302;))"
+      },
+      {
+        "paragraph_id": 155,
+        "annotation_id": 0,
+        "target": "Refinitiv",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997194409370422,
+        "content": "Data provider Refinitiv said average gas output in the U.S. Lower 48 states rose to 98.8 bcfd so far in September from a record 98.0 bcfd in August."
+      },
+      {
+        "paragraph_id": 500,
+        "annotation_id": 1,
+        "target": "China Southern Airlines Co Ltd",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997192025184631,
+        "content": "Boeing Co <BA.N> surged 4.7% after China Southern Airlines Co Ltd <600029.SS> this week conducted test flights with a 737 MAX plane for the first time since March, in a sign the jet's return in China could be nearing as demand rebounds. [nL8N2Y218S]"
+      },
+      {
+        "paragraph_id": 499,
+        "annotation_id": 1,
+        "target": "Jefferies",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997190833091736,
+        "content": "\"Halliburton continues to benefit from momentum in activity/exposure to pressure pumping in North America, along with higher contribution from international operations,\" wrote analysts for investment banking firm Jefferies in a note. "
+      },
+      {
+        "paragraph_id": 53,
+        "annotation_id": 0,
+        "target": "BASF",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997178912162781,
+        "content": "Sika <SIKA.S> gained 4.3% after the chemicals maker raised its full-year sales forecast and launched the sale of an 850 million Swiss franc ($858.50 million) chunk of the former BASF <BASFn.DE> business it bought last year. [nL8N3150J2]"
+      },
+      {
+        "paragraph_id": 566,
+        "annotation_id": 2,
+        "target": "S&P 500 futures",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997171759605408,
+        "content": "The Nasdaq <.IXIC> and S&P 500 <.SPX> recorded their best sessions of 2022, rising 1.4% and 0.9%, respectively. S&P 500 futures <ESc1> were steady in early Asia trade. [.N]"
+      },
+      {
+        "paragraph_id": 103,
+        "annotation_id": 0,
+        "target": "KAYAK",
+        "expected": "neutral",
+        "predicted": "positive",
+        "confidence": 0.9997146725654602,
+        "content": "Travel website KAYAK said searches for international travel, including to Europe, from the United States are up nearly 40% from last year.    "
+      },
+      {
+        "paragraph_id": 496,
+        "annotation_id": 1,
+        "target": "KKR",
+        "expected": "negative",
+        "predicted": "positive",
+        "confidence": 0.9997140765190125,
+        "content": "Apollo said its private equity portfolio appreciated by 8% in the first quarter. The private equity funds of Blackstone and Carlyle rose by 2.8% and 7%, respectively, while those of KKR fell 5% in the same period."
+      },
+      {
+        "paragraph_id": 873,
+        "annotation_id": 0,
+        "target": "United Airlines",
+        "expected": "negative",
+        "predicted": "positive",
+        "confidence": 0.9997124075889587,
+        "content": "United Airlines' <UAL.O> wage and fuel expense as a percentage of revenue is up by 10 points this year versus 2019. In the first six months of 2022, the company spent 59% of its revenue on wage and fuel bills. American Airlines <AAL.O> has had similar increases."
+      },
+      {
+        "paragraph_id": 873,
+        "annotation_id": 1,
+        "target": "American Airlines",
+        "expected": "negative",
+        "predicted": "positive",
+        "confidence": 0.9997124075889587,
+        "content": "United Airlines' <UAL.O> wage and fuel expense as a percentage of revenue is up by 10 points this year versus 2019. In the first six months of 2022, the company spent 59% of its revenue on wage and fuel bills. American Airlines <AAL.O> has had similar increases."
+      }
+    ]
+  },
+  "latency": {
+    "model_load_seconds": 5.4951483749900945,
+    "paragraphs_attempted": 979,
+    "mean_ms_per_paragraph": 21.362416684331205
+  },
+  "failures": [],
+  "environment": {
+    "python": "3.12.7",
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "torch": "2.13.0",
+    "transformers": "4.57.6"
+  }
+}
