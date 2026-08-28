@@ -1,5 +1,5 @@
-from news_signal.entrypoints.tools import NewsSignalTools
-from news_signal.models import AnalysisResult
+from news_signal_v1.entrypoints.tools import NewsSignalTools
+from news_signal_v1.models import AnalysisResult
 
 
 class FakePipeline:

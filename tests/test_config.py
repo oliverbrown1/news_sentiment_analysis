@@ -1,6 +1,6 @@
 import pytest
 
-from news_signal.config import ConfigurationError, Settings
+from news_signal_v1.config import ConfigurationError, Settings
 
 
 def test_settings_reads_environment(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

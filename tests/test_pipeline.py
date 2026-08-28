@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from news_signal.adapters import ArticleExtractionError
-from news_signal.models import Article, SentimentResult
-from news_signal.pipeline import NewsAnalysisPipeline
+from news_signal_v1.adapters import ArticleExtractionError
+from news_signal_v1.models import Article, SentimentResult
+from news_signal_v1.pipeline import NewsAnalysisPipeline
 
 
 @dataclass

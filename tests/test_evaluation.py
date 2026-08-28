@@ -3,19 +3,19 @@ from pathlib import Path
 
 import pytest
 
-from news_signal.evaluation import (
+from eval import (
     EvaluationDataError,
+    SentimentPrediction,
     evaluate_finentity,
     load_finentity,
 )
-from news_signal.models import SentimentResult
 
 
 class FakeClassifier:
-    def classify(self, title: str, content: str) -> SentimentResult:
-        if content == "Alpha rises.":
-            return SentimentResult("positive", 0.9)
-        return SentimentResult("neutral", 0.6)
+    def predict(self, target: str, text: str) -> SentimentPrediction:
+        if text == "Alpha rises.":
+            return SentimentPrediction("positive", 0.9)
+        return SentimentPrediction("neutral", 0.6)
 
 
 def write_dataset(path: Path) -> None:
@@ -63,9 +63,11 @@ def test_finentity_evaluation_reports_class_and_slice_metrics(tmp_path: Path) ->
     report = evaluate_finentity(
         FakeClassifier(),
         load_finentity(path),
+        system_name="v1",
         model_name="test/model",
         model_revision="abc123",
         model_load_seconds=0.25,
+        target_usage="ignored",
     ).to_dict()
 
     metrics = report["metrics"]
@@ -81,7 +83,12 @@ def test_finentity_evaluation_reports_class_and_slice_metrics(tmp_path: Path) ->
     assert report["calibration"]["expected_calibration_error"] == pytest.approx(0.1)
     assert report["error_analysis"]["misclassified_annotations"] == 1
     assert report["error_analysis"]["highest_confidence_errors"][0]["target"] == "Beta"
-    assert report["model"] == {"name": "test/model", "revision": "abc123"}
+    assert report["model"] == {
+        "system": "v1",
+        "name": "test/model",
+        "revision": "abc123",
+    }
+    assert report["latency"]["annotations_succeeded"] == 3
     assert report["schema_version"] == 2
 
 
