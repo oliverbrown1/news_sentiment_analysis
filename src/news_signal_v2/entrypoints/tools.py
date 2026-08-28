@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+from news_signal_v2.application import build_pipeline
+from news_signal_v2.config import Settings
+from news_signal_v2.pipeline import NewsAnalysisPipeline
+
+
+class NewsSignalTools:
+    def __init__(
+        self, pipeline: NewsAnalysisPipeline, default_lookback_days: int
+    ) -> None:
+        self._pipeline = pipeline
+        self._default_lookback_days = default_lookback_days
+
+    def analyse_company_news(
+        self,
+        company: str,
+        ticker: str | None = None,
+        limit: int = 5,
+        lookback_days: int | None = None,
+    ) -> dict[str, object]:
+        result = self._pipeline.analyse(
+            company=company,
+            ticker=ticker,
+            limit=limit,
+            lookback_days=lookback_days or self._default_lookback_days,
+        )
+        return result.to_dict()
+
+
+def build_tools(settings: Settings | None = None) -> NewsSignalTools:
+    settings = settings or Settings.from_env()
+    return NewsSignalTools(build_pipeline(settings), settings.lookback_days)

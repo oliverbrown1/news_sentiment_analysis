@@ -12,7 +12,7 @@ DEFAULT_MODEL = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analys
 class ConfigurationError(ValueError):
     pass
 
-# separated for eval which does not need NEWS_API_KEY
+
 def load_sentiment_model_name() -> str:
     load_dotenv(Path.cwd() / ".env")
     model = os.getenv("SENTIMENT_MODEL", DEFAULT_MODEL).strip()

@@ -1,10 +1,10 @@
-from news_signal.adapters import (
+from news_signal_v1.adapters import (
     HuggingFaceSentimentClassifier,
     NewsApiProvider,
     NewspaperArticleExtractor,
 )
-from news_signal.config import Settings
-from news_signal.pipeline import NewsAnalysisPipeline
+from news_signal_v1.config import Settings
+from news_signal_v1.pipeline import NewsAnalysisPipeline
 
 
 def build_pipeline(settings: Settings) -> NewsAnalysisPipeline:

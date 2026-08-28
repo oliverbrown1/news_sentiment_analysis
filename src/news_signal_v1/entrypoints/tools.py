@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from news_signal.application import build_pipeline
-from news_signal.config import Settings
-from news_signal.pipeline import NewsAnalysisPipeline
+from news_signal_v1.application import build_pipeline
+from news_signal_v1.config import Settings
+from news_signal_v1.pipeline import NewsAnalysisPipeline
 
 
 class NewsSignalTools:

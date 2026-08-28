@@ -1,168 +1,120 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-08-28
 
 ## Purpose
 
-This repository contains a typed Python pipeline that:
+This repository contains comparable V1 and V2 financial-news pipelines plus an
+independent sentiment evaluator. V1 preserves the modernised legacy behavior. V2
+adds broader ingestion, stronger article extraction, company-specific evidence,
+and an updated sentiment model.
 
-1. Searches NewsAPI for recent articles about a company.
-2. Restricts results to a maintained list of financial news domains.
-3. Extracts and summarizes articles with `newspaper3k` and NLTK.
-4. Classifies the title and summary with a financial sentiment model.
-5. Returns structured article results and explicit extraction failures as JSON.
-
-The current output is news sentiment, not a prediction of company or share-price
-performance. Do not make predictive claims until the planned backtest exists.
+Neither version predicts company or share-price performance. Keep that claim out
+of documentation until a leakage-safe backtest exists.
 
 ## Repository Layout
 
 ```text
-src/news_signal/
-  entrypoints/
-    cli.py         # argparse CLI and JSON output
-    tools.py       # reusable agent-compatible callable
-  adapters.py      # external service and model integrations
-  application.py   # constructs the production pipeline
-  config.py        # environment configuration
-  models.py        # typed immutable result models
-  pipeline.py      # protocols and application orchestration
-tests/             # offline pytest tests
+src/
+  eval/                    # FinEntity loading, metrics, reports, evaluation CLI
+  news_signal_v1/          # preserved NewsAPI/newspaper3k/DistilRoBERTa baseline
+    entrypoints/           # V1 CLI and reusable agent tool
+  news_signal_v2/          # improved ingestion and analysis pipeline
+    entrypoints/           # V2 CLI and reusable agent tool
+tests/                     # offline pytest suite for all three packages
+data/finentity.json        # pinned entity-level sentiment benchmark
+reports/                   # generated evaluation reports
 ```
 
-Other important files:
+Each news package keeps `models.py` for immutable result types, `config.py` for
+environment configuration, `adapters.py` for external integrations,
+`pipeline.py` for orchestration and injectable protocols, and `application.py`
+for production construction. Transport code remains in `entrypoints/`.
 
-- `pyproject.toml` defines the package, dependency groups, pytest configuration,
-  and `news-signal` console command.
-- `uv.lock` records the resolved, reproducible dependency environment.
-- `.python-version` pins project commands to Python 3.12.
-- `.env.example` documents safe runtime configuration.
-- `Sentences_50Agree.txt` contains 300 labelled Financial PhraseBank examples.
-- `NewsSentimentAnalysis.py` is a compatibility wrapper for the CLI; new code
-  should import `news_signal` or use the console command.
-- `docs/PLAN.MD` records the sequential modernization plan.
+## Runtime Flows
 
-## Runtime Flow
+V1:
 
 ```text
-CLI or tool arguments + environment
-    -> NewsApiProvider.fetch
-    -> NewspaperArticleExtractor.extract
-    -> HuggingFaceSentimentClassifier.classify
-    -> NewsAnalysisPipeline result
-    -> dictionary for a tool, or JSON to stdout
+NewsAPI SDK + fixed domain allowlist
+  -> newspaper3k article summary
+  -> legacy financial DistilRoBERTa sentiment
+  -> JSON or agent-tool dictionary
 ```
 
-`NewsAnalysisPipeline` depends on the `NewsProvider`, `ArticleExtractor`, and
-`SentimentClassifier` protocols. Keep those boundaries injectable: production
-uses the real adapters while tests use small fakes.
+V2:
 
-The pipeline deduplicates identical URLs, continues after known extraction
-failures, and stops after the requested number of successful articles. Provider
-and classifier failures currently propagate to the caller.
+```text
+direct NewsAPI request + optional domains + optional ticker
+  -> canonical URL/title deduplication
+  -> Trafilatura article body extraction
+  -> target sentence and immediate-context selection
+  -> ModernFinBERT sentiment
+  -> JSON or agent-tool dictionary
+```
 
-## Setup and Commands
+## Evaluation
 
-Use `uv` for environment and dependency management:
+`eval` owns FinEntity parsing and every metric. It depends only on a small
+`SentimentSystem.predict(target, text)` protocol, so neither V1 nor V2 owns its
+benchmark logic. The CLI adapters make their different behavior explicit:
+
+- V1 classifies the whole paragraph and ignores the entity target.
+- V2 uses the entity target to select evidence before classification.
+
+Reports contain accuracy, macro F1, per-class precision/recall/F1, confusion
+matrix, calibration, per-annotation latency, dataset diagnostics, a mixed-label
+slice, and high-confidence errors. Dataset revision and SHA-256, model revision,
+runtime versions, failures, and target usage are recorded for reproducibility.
+
+## Commands
 
 ```bash
 uv sync
 cp .env.example .env
 uv run python -m nltk.downloader punkt punkt_tab
-```
 
-Run an analysis:
+uv run news-signal-v1 analyse --company "NVIDIA" --limit 5
+uv run news-signal-v2 analyse --company "NVIDIA" --ticker NVDA --limit 5
 
-```bash
-uv run news-signal analyse --company "NVIDIA" --limit 5 --days 7
-```
-
-Create a reusable agent tool:
-
-```python
-from news_signal.entrypoints.tools import build_tools
-
-tools = build_tools()
-result = tools.analyse_company_news("NVIDIA", limit=5)
-```
-
-Build the tool object once per agent process. It retains the pipeline and avoids
-reconstructing the lazy-loaded classifier for each tool call.
-
-Run the offline unit suite:
-
-```bash
+uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
+uv run news-signal-eval --system v2 --output reports/finentity-sentiment-v2.json
 uv run pytest
 ```
 
-Use `uv add`, `uv remove`, and `uv lock` for dependency changes, and `uv build`
-for package artifacts. Do not introduce pip requirements files alongside the
-`pyproject.toml` and `uv.lock` sources of truth.
-
-The first production analysis can download the configured Hugging Face model.
-It also makes requests to NewsAPI and publisher websites. Tests and imports must
-remain offline and free of model or NLTK downloads.
+`news-signal` aliases V2. `NewsSentimentAnalysis.py` remains a V1 compatibility
+wrapper. Use `uv add`, `uv remove`, `uv lock`, and `uv build`; do not add pip
+requirements files alongside `pyproject.toml` and `uv.lock`.
 
 ## Configuration
 
-`Settings.from_env()` loads `.env` from the current working directory and
-validates:
+- `NEWS_API_KEY`: required for live news analysis, never for evaluation.
+- `NEWS_LOOKBACK_DAYS`: positive integer, default `7`.
+- `SENTIMENT_MODEL`: optional V1 Hugging Face model identifier.
+- `V2_SENTIMENT_MODEL`: optional V2 Hugging Face model identifier.
+- `NEWS_DOMAINS`: optional comma-separated V2 source filter; empty means no filter.
+- `NEWS_API_URL`: optional V2 endpoint, useful for controlled integration tests.
 
-- `NEWS_API_KEY`: required NewsAPI credential.
-- `NEWS_LOOKBACK_DAYS`: optional positive integer, default `7`.
-- `SENTIMENT_MODEL`: optional Hugging Face model identifier.
-
-Never commit `.env`, `config.py`, credentials, or downloaded article bodies.
-The old ignored `config.py` is no longer used by the application.
-
-## Model and Evaluation Data
-
-The default model is:
-
-```text
-mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis
-```
-
-The classifier retains both the normalized label and model confidence, and
-enables input truncation. Model loading is lazy.
-
-`Sentences_50Agree.txt` uses `sentence@label` rows. The historical repository
-and CV claim approximately 92% accuracy; the current model reproduces 91.03%
-accuracy and 67.07% macro F1 across its 301 heavily imbalanced examples. Treat
-this only as a legacy regression result because the model was trained on the
-same source corpus.
-
-`data/finentity.json` is pinned at its upstream revision and evaluated through
-`news-signal evaluate-sentiment`. The report scores entity annotations and
-includes accuracy, macro F1, per-class metrics, confusion matrix, calibration,
-mean latency, dataset diagnostics, and a mixed-sentiment slice.
-The current classifier is sequence-level and does not receive the target entity;
-this limitation must remain explicit when interpreting FinEntity results.
+The first real inference can download a Hugging Face model. Imports and unit
+tests must stay offline and side-effect free. Never commit `.env`, credentials,
+downloaded articles, or model weights.
 
 ## Development Rules
 
-- Keep imports fast and side-effect free.
-- Keep external services behind the existing protocols.
-- Use typed result models instead of pandas rows or unstructured dictionaries.
-- Add focused pytest coverage for behavior and failure paths.
-- Do not silently swallow provider or inference errors.
-- Preserve source URLs, timestamps, confidence, and failure details.
-- Do not globally disable TLS verification or download resources at import time.
+- Keep external services behind the existing protocols and inject fakes in tests.
+- Preserve URLs, timestamps, confidence, evidence, and explicit failure details.
+- Do not catch broad exceptions or turn failures into successful empty results.
 - Keep deterministic scoring separate from model-generated output.
-- Keep CLI, tool, and future API translation inside `entrypoints/`; do not put
-  transport-specific behavior in the pipeline.
+- Keep result models typed and serialization at entry-point boundaries.
+- Evaluate changes before making quality or predictive claims.
 
 ## Current Limitations
 
-- Article processing is sequential and has no application-level retry or cache.
-- Article extraction remains dependent on publisher markup, access restrictions,
-  and local NLTK tokenizer data.
-- The source allowlist is hard-coded.
-- Only article-extraction failures are represented as partial results.
-- There is no HTTP API, persistence, tracing, deployment, event extraction, company
-  signal aggregation, or performance backtest yet.
-- The Financial PhraseBank subset remains a legacy dataset and is not yet wired
-  into the packaged evaluator.
+- Processing is sequential and has no retry, cache, persistence, or tracing.
+- NewsAPI coverage and publisher extraction remain externally constrained.
+- Target evidence selection is a deterministic baseline.
+- FinEntity evaluates sentiment only, not ingestion or extraction quality.
+- There is no HTTP API, signal aggregation, deployment, or market backtest yet.
 
-Continue with one numbered step from `docs/PLAN.MD` at a time. Step 1 is
-complete, Step 2 is complete, and Step 3 is the next planned change.
+Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-3 are
+implemented; Step 4 is the next application change.

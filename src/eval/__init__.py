@@ -10,10 +10,9 @@ from importlib.metadata import version
 from pathlib import Path
 from statistics import mean
 from time import perf_counter
-from typing import Any, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 
-from news_signal.models import SentimentLabel, SentimentResult
-
+SentimentLabel = Literal["positive", "neutral", "negative"]
 LABELS: tuple[SentimentLabel, ...] = ("negative", "neutral", "positive")
 FINENTITY_SOURCE = "https://github.com/yixuantt/FinEntity"
 FINENTITY_REVISION = "3b6cedc5485b669c2ed168f1d949f517636eb7b8"
@@ -23,8 +22,18 @@ class EvaluationDataError(ValueError):
     pass
 
 
-class SentimentClassifier(Protocol):
-    def classify(self, title: str, content: str) -> SentimentResult: ...
+@dataclass(frozen=True, slots=True)
+class SentimentPrediction:
+    label: SentimentLabel
+    confidence: float
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.confidence <= 1:
+            raise ValueError("confidence must be between 0 and 1")
+
+
+class SentimentSystem(Protocol):
+    def predict(self, target: str, text: str) -> SentimentPrediction: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +65,8 @@ class FinEntityDataset:
 @dataclass(frozen=True, slots=True)
 class EvaluationFailure:
     paragraph_id: int
+    annotation_id: int
+    target: str
     reason: str
 
 
@@ -82,7 +93,7 @@ class SentimentEvaluationReport:
 class _ScoredAnnotation:
     paragraph: FinEntityParagraph
     annotation: EntityAnnotation
-    prediction: SentimentResult
+    prediction: SentimentPrediction
 
 
 def load_finentity(path: Path) -> FinEntityDataset:
@@ -175,31 +186,36 @@ def load_finentity(path: Path) -> FinEntityDataset:
 
 
 def evaluate_finentity(
-    classifier: SentimentClassifier,
+    system: SentimentSystem,
     dataset: FinEntityDataset,
     *,
+    system_name: str,
     model_name: str,
     model_revision: str | None = None,
     model_load_seconds: float | None = None,
+    target_usage: str,
 ) -> SentimentEvaluationReport:
     scored: list[_ScoredAnnotation] = []
     failures: list[EvaluationFailure] = []
     inference_times: list[float] = []
 
     for paragraph in dataset.paragraphs:
-        started = perf_counter()
-        try:
-            prediction = classifier.classify("", paragraph.content)
-        except (RuntimeError, ValueError) as exc:
-            failures.append(EvaluationFailure(paragraph.paragraph_id, str(exc)))
-            continue
-        finally:
+        for annotation in paragraph.annotations:
+            started = perf_counter()
+            try:
+                prediction = system.predict(annotation.target, paragraph.content)
+            except (RuntimeError, ValueError) as exc:
+                failures.append(
+                    EvaluationFailure(
+                        paragraph.paragraph_id,
+                        annotation.annotation_id,
+                        annotation.target,
+                        str(exc),
+                    )
+                )
+                continue
             inference_times.append(perf_counter() - started)
-
-        scored.extend(
-            _ScoredAnnotation(paragraph, annotation, prediction)
-            for annotation in paragraph.annotations
-        )
+            scored.append(_ScoredAnnotation(paragraph, annotation, prediction))
 
     if not scored:
         raise RuntimeError("sentiment evaluation produced no predictions")
@@ -218,8 +234,8 @@ def evaluate_finentity(
         task={
             "name": "entity-level financial sentiment",
             "unit": "entity annotation",
-            "input": "paragraph content only",
-            "target_usage": "target is evaluated but not provided to the current classifier",
+            "input": "target entity and paragraph content",
+            "target_usage": target_usage,
         },
         dataset={
             "name": "FinEntity",
@@ -236,7 +252,7 @@ def evaluate_finentity(
                 "targets_with_conflicting_labels": dataset.conflicting_target_labels,
             },
         },
-        model={"name": model_name, "revision": model_revision},
+        model={"system": system_name, "name": model_name, "revision": model_revision},
         metrics={
             **all_metrics,
             "prediction_distribution": dict(predictions),
@@ -401,8 +417,8 @@ def _latency_metrics(
     milliseconds = [duration * 1000 for duration in inference_times]
     return {
         "model_load_seconds": model_load_seconds,
-        "paragraphs_attempted": len(milliseconds),
-        "mean_ms_per_paragraph": mean(milliseconds),
+        "annotations_succeeded": len(milliseconds),
+        "mean_ms_per_annotation": mean(milliseconds),
     }
 
 

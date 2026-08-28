@@ -1,4 +1,4 @@
-from news_signal.entrypoints.cli import main
+from news_signal_v2.entrypoints.cli import main
 
 
 if __name__ == "__main__":

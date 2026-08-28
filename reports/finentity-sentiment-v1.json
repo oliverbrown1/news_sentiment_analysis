@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-08-25T11:53:04.502760+00:00",
+  "generated_at": "2026-08-28T14:27:17.668527+00:00",
   "task": {
     "name": "entity-level financial sentiment",
     "unit": "entity annotation",
-    "input": "paragraph content only",
-    "target_usage": "target is evaluated but not provided to the current classifier"
+    "input": "target entity and paragraph content",
+    "target_usage": "target is ignored; the full paragraph is classified once per annotation"
   },
   "dataset": {
     "name": "FinEntity",
@@ -27,6 +27,7 @@
     }
   },
   "model": {
+    "system": "v1",
     "name": "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis",
     "revision": "ae0eab9ad336d7d548e0efe394b07c04bcaf6e91"
   },
@@ -331,15 +332,15 @@
     ]
   },
   "latency": {
-    "model_load_seconds": 5.4951483749900945,
-    "paragraphs_attempted": 979,
-    "mean_ms_per_paragraph": 21.362416684331205
+    "model_load_seconds": 6.038129249995109,
+    "annotations_succeeded": 2131,
+    "mean_ms_per_annotation": 9.14516685723276
   },
   "failures": [],
   "environment": {
     "python": "3.12.7",
     "platform": "macOS-26.3.1-arm64-arm-64bit",
     "torch": "2.13.0",
-    "transformers": "4.57.6"
+    "transformers": "5.16.1"
   }
 }

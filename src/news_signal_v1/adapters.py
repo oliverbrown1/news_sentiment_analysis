@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from news_signal.models import Article, SentimentLabel, SentimentResult
+from news_signal_v1.models import Article, SentimentLabel, SentimentResult
 
 FINANCIAL_DOMAINS = (
     "bloomberg.com",

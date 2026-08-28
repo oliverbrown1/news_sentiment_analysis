@@ -4,25 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "news-signal"
-version = "1.0.0"
-description = "Financial news sentiment analysis pipeline"
+version = "2.0.0"
+description = "Comparable financial news sentiment pipelines"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "httpx>=0.28,<1",
     "lxml-html-clean>=0.4,<1",
     "newsapi-python>=0.2.7,<1",
     "newspaper3k>=0.2.8,<1",
     "nltk>=3.9,<4",
     "python-dotenv>=1.0,<2",
     "torch>=2.6,<3",
-    "transformers>=4.50,<5",
+    "trafilatura>=2.0,<3",
+    "transformers>=5.2,<6",
 ]
 
 [dependency-groups]
 dev = ["pytest>=8.3,<9"]
 
 [project.scripts]
-news-signal = "news_signal.entrypoints.cli:main"
+news-signal = "news_signal_v2.entrypoints.cli:main"
+news-signal-v1 = "news_signal_v1.entrypoints.cli:main"
+news-signal-v2 = "news_signal_v2.entrypoints.cli:main"
+news-signal-eval = "eval.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

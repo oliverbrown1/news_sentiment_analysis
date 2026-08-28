@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from news_signal.adapters import ArticleExtractionError
-from news_signal.models import AnalysisFailure, AnalysisResult, AnalysedArticle
-from news_signal.models import Article, SentimentResult
+from news_signal_v1.adapters import ArticleExtractionError
+from news_signal_v1.models import AnalysisFailure, AnalysisResult, AnalysedArticle
+from news_signal_v1.models import Article, SentimentResult
 
 
 class NewsProvider(Protocol):
