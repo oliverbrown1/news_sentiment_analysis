@@ -38,16 +38,21 @@ uv run news-signal-v2 analyse --company "Rolls-Royce Holdings"
 The model-independent `eval` package contains two task-specific evaluators:
 
 - `sentiment_eval` uses FinEntity to evaluate semantic financial sentiment.
-- `market_eval` uses FinMarBa to evaluate market-direction predictions for dated headlines and tickers.
+- `market_eval` uses FinMarBa to evaluate market-direction predictions for dated headlines and tickers, sentiment is dervied from market-direction.
 
 V1 and V2 sentiment reports are generated with:
 
 ```bash
 uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
 uv run news-signal-eval --system v2 --output reports/finentity-sentiment-v2.json
+uv run news-signal-eval --task market --system v2 --output reports/finmarba-market-sentiment-v2.json
 ```
 
-Reports dataset checksum, model revision, metrics (accuracy, F1, recall, per sentiment class metrics, confusion matrix, mean confidence, mean latency)
+Both evaluators report the dataset checksum, model revision, accuracy, macro F1,
+per-class metrics, confusion matrix, calibration, latency, and high-confidence
+errors. 
+
+The `market_eval` system will be used to evaluate the agent, but we can also evaluate against just the sentiment models as a baseline, since `market_eval` dataset also contains sentiment. See `data/market-sentiment-v2.json`
 
 ## Agent Tool
 
@@ -77,6 +82,6 @@ Unit tests use fakes and need no credentials, network, NLTK data, or model downl
 
 ## Backlog
 
-* 300-row Financial PhraseBank subset retained as a legacy regression benchmark within `Sentences_50Agree.txt`
+* Scrape company signals for given date to enrich sentiment label for news articles and more accurately determine performance
 * Use sentiment output and other signals to predict company performance, using Agentic AI pipeline
-* Use FinMarBa for later evaluation of the agentic pipeline - evaluation dataset which shows how market performs/move after headlines, not just sentiment.
+* Evaluate agentic pipeline against `market_eval` evaluation module.

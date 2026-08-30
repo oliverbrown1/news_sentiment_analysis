@@ -1,0 +1,397 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-30T11:45:13.613358+00:00",
+  "task": {
+    "name": "ticker-level market direction",
+    "unit": "dated headline and ticker",
+    "input": "date, ticker, and financial headline",
+    "target": "FinMarBa market-derived direction"
+  },
+  "dataset": {
+    "name": "FinMarBa released subset",
+    "path": "data/finmarba.csv",
+    "source": "https://huggingface.co/datasets/baptle/financial_headlines_market_based",
+    "revision": "d4ac449b57cb7dddfd5d8e05fd1326f8cb03fa29",
+    "sha256": "554afe421d62f6a93f342ba10def593a485120c86d5e5074477d03dd95258a8c",
+    "source_rows": 8142,
+    "examples": 9978,
+    "date_start": "2010-01-04",
+    "date_end": "2011-12-30",
+    "label_distribution": {
+      "positive": 4312,
+      "negative": 3098,
+      "neutral": 2568
+    },
+    "diagnostics": {
+      "missing_ticker_labels": 558,
+      "missing_ticker_returns": 0,
+      "duplicate_examples": 3
+    }
+  },
+  "model": {
+    "system": "sentiment-v2-baseline",
+    "name": "neoyipeng/ModernFinBERT-base",
+    "revision": "71404b76e6148b499b89d59d251e64fea52d8760"
+  },
+  "metrics": {
+    "evaluated_examples": 9978,
+    "accuracy": 0.46672679895770697,
+    "macro_f1": 0.45656377177386603,
+    "per_class": {
+      "negative": {
+        "precision": 0.5038928682653379,
+        "recall": 0.5222724338282763,
+        "f1": 0.512918053574259,
+        "support": 3098,
+        "predicted": 3211
+      },
+      "neutral": {
+        "precision": 0.2678464307138572,
+        "recall": 0.3477414330218069,
+        "f1": 0.3026092849881396,
+        "support": 2568,
+        "predicted": 3334
+      },
+      "positive": {
+        "precision": 0.6251092339062044,
+        "recall": 0.4976808905380334,
+        "f1": 0.5541639767591995,
+        "support": 4312,
+        "predicted": 3433
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "negative",
+        "neutral",
+        "positive"
+      ],
+      "rows": [
+        [
+          1618,
+          994,
+          486
+        ],
+        [
+          874,
+          893,
+          801
+        ],
+        [
+          719,
+          1447,
+          2146
+        ]
+      ]
+    },
+    "prediction_distribution": {
+      "neutral": 3334,
+      "positive": 3433,
+      "negative": 3211
+    }
+  },
+  "slices": {},
+  "calibration": {
+    "expected_calibration_error": 0.4999573294026301,
+    "mean_confidence": 0.9622896204805788,
+    "mean_confidence_when_correct": 0.9674319085617651,
+    "mean_confidence_when_incorrect": 0.9577890311939625,
+    "bins": [
+      {
+        "lower": 0.0,
+        "upper": 0.1,
+        "count": 3,
+        "accuracy": 0.6666666666666666,
+        "average_confidence": 0.07108152906099956
+      },
+      {
+        "lower": 0.1,
+        "upper": 0.2,
+        "count": 19,
+        "accuracy": 0.3684210526315789,
+        "average_confidence": 0.15243359968850487
+      },
+      {
+        "lower": 0.2,
+        "upper": 0.3,
+        "count": 62,
+        "accuracy": 0.41935483870967744,
+        "average_confidence": 0.2606860740530875
+      },
+      {
+        "lower": 0.3,
+        "upper": 0.4,
+        "count": 68,
+        "accuracy": 0.4411764705882353,
+        "average_confidence": 0.35005559728426094
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.5,
+        "count": 81,
+        "accuracy": 0.41975308641975306,
+        "average_confidence": 0.4510648121804367
+      },
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "count": 95,
+        "accuracy": 0.3684210526315789,
+        "average_confidence": 0.5556892940872594
+      },
+      {
+        "lower": 0.6,
+        "upper": 0.7,
+        "count": 145,
+        "accuracy": 0.35172413793103446,
+        "average_confidence": 0.6549242521154469
+      },
+      {
+        "lower": 0.7,
+        "upper": 0.8,
+        "count": 203,
+        "accuracy": 0.41379310344827586,
+        "average_confidence": 0.7523297230011137
+      },
+      {
+        "lower": 0.8,
+        "upper": 0.9,
+        "count": 268,
+        "accuracy": 0.3917910447761194,
+        "average_confidence": 0.8531702694608204
+      },
+      {
+        "lower": 0.9,
+        "upper": 1.0,
+        "count": 9034,
+        "accuracy": 0.47409785255700687,
+        "average_confidence": 0.9954601192938851
+      }
+    ]
+  },
+  "error_analysis": {
+    "misclassified_examples": 5321,
+    "confusion_pairs": {
+      "positive->neutral": 1447,
+      "negative->neutral": 994,
+      "neutral->negative": 874,
+      "neutral->positive": 801,
+      "positive->negative": 719,
+      "negative->positive": 486
+    },
+    "highest_confidence_errors": [
+      {
+        "example_id": 91,
+        "date": "2010-01-07",
+        "ticker": "EWJ",
+        "headline": "Japanese Finance Minister Signals Preference for Weaker Yen",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999996423721313,
+        "return_pct": -0.008919686987465814
+      },
+      {
+        "example_id": 508,
+        "date": "2010-02-05",
+        "ticker": "BRK-A",
+        "headline": "Berkshire Hathaway Sells $8 Billion of Notes for Burlington Northern Acquisition",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999996423721313,
+        "return_pct": 0.010101010101010166
+      },
+      {
+        "example_id": 1541,
+        "date": "2010-04-27",
+        "ticker": "GS",
+        "headline": "U.S. Senators Grill Goldman Sachs Executives on Mortgage Deals",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999995231628418,
+        "return_pct": 0.006643360058635084
+      },
+      {
+        "example_id": 3454,
+        "date": "2010-09-13",
+        "ticker": "XLF",
+        "headline": "Banks Given Until 2019 to Meet New Capital Requirements After Basel Compromise",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999995231628418,
+        "return_pct": 0.021335101678221946
+      },
+      {
+        "example_id": 5171,
+        "date": "2011-01-11",
+        "ticker": "SPY",
+        "headline": "New York Fed President Bill Dudley to Speak Amidst Fed Talks",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999995231628418,
+        "return_pct": 0.003543791442844446
+      },
+      {
+        "example_id": 1191,
+        "date": "2010-03-31",
+        "ticker": "GLD",
+        "headline": "Precious Metals Rally, Gold Marks Sixth Consecutive Quarterly Gain",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.009076555677125953
+      },
+      {
+        "example_id": 3549,
+        "date": "2010-09-21",
+        "ticker": "EWQ",
+        "headline": "Global Markets Rally as Macron Leads French Presidential Race",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.007652916146413835
+      },
+      {
+        "example_id": 5776,
+        "date": "2011-02-22",
+        "ticker": "AFK",
+        "headline": "Libyan Leader Qaddafi Vows to Fight Rebellion",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": -0.05270902560415702
+      },
+      {
+        "example_id": 6057,
+        "date": "2011-03-16",
+        "ticker": "EWJ",
+        "headline": "IAEA Chief Yukiya Amano to Discuss Crisis with Tokyo Authorities",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": -0.03688928008066872
+      },
+      {
+        "example_id": 6460,
+        "date": "2011-04-19",
+        "ticker": "SKFRY",
+        "headline": "SKF AB Posts Record Profit",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.07678555345012561
+      },
+      {
+        "example_id": 6969,
+        "date": "2011-05-26",
+        "ticker": "SPY",
+        "headline": "Federal Reserve Prepares to End Second Round of Quantitative Easing",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.004607860714525236
+      },
+      {
+        "example_id": 7561,
+        "date": "2011-07-13",
+        "ticker": "SPY",
+        "headline": "Bernanke's Testimony to Congress, Statement Awaited.",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.003348367898513782
+      },
+      {
+        "example_id": 8299,
+        "date": "2011-09-02",
+        "ticker": "AZN",
+        "headline": "AstraZeneca Plc Slumps After Reporting Study Results for Crestor Treatment",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": -0.03448296231258918
+      },
+      {
+        "example_id": 9016,
+        "date": "2011-10-24",
+        "ticker": "HG=F",
+        "headline": "Copper, Aluminum, Nickel, Lead, Zinc and Tin Rise",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.0708294248068635
+      },
+      {
+        "example_id": 9017,
+        "date": "2011-10-24",
+        "ticker": "ZS=F",
+        "headline": "Copper, Aluminum, Nickel, Lead, Zinc and Tin Rise",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999994039535522,
+        "return_pct": 0.011961229119406003
+      },
+      {
+        "example_id": 3253,
+        "date": "2010-08-30",
+        "ticker": "INTC",
+        "headline": "Intel Acquires Infineon's Wireless Unit for $1.4 Billion",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999992847442627,
+        "return_pct": -0.022318776330900847
+      },
+      {
+        "example_id": 3254,
+        "date": "2010-08-30",
+        "ticker": "IFNNY",
+        "headline": "Intel Acquires Infineon's Wireless Unit for $1.4 Billion",
+        "expected": "negative",
+        "predicted": "neutral",
+        "confidence": 0.9999992847442627,
+        "return_pct": -0.06397306716873552
+      },
+      {
+        "example_id": 4158,
+        "date": "2010-11-01",
+        "ticker": "0358.HK",
+        "headline": "Jiangxi Copper Co. and Zhuzhou Smelter Group Co. Lead Gains in Commodity Producers",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999992847442627,
+        "return_pct": 0.0601850021628465
+      },
+      {
+        "example_id": 4159,
+        "date": "2010-11-01",
+        "ticker": "600961.SS",
+        "headline": "Jiangxi Copper Co. and Zhuzhou Smelter Group Co. Lead Gains in Commodity Producers",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999992847442627,
+        "return_pct": 0.0655844320714487
+      },
+      {
+        "example_id": 4223,
+        "date": "2010-11-04",
+        "ticker": "BRK-A",
+        "headline": "Swiss Reinsurance to Repay Warren Buffett's Capital Injection",
+        "expected": "positive",
+        "predicted": "neutral",
+        "confidence": 0.9999992847442627,
+        "return_pct": 0.021961331636632275
+      }
+    ]
+  },
+  "latency": {
+    "model_load_seconds": 53.329437332984526,
+    "examples_succeeded": 9978,
+    "mean_ms_per_example": 31.754420810319537
+  },
+  "failures": [],
+  "environment": {
+    "python": "3.12.12",
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "torch": "2.13.0",
+    "transformers": "5.16.1"
+  }
+}

@@ -78,6 +78,12 @@ compares predictions with market-derived direction rather than semantic
 sentiment. The public subset has 8,142 rows covering 2010-2011 and yields 9,978
 labelled ticker examples; it is not the full corpus described by the paper.
 
+`eval.sentiment_baseline` implements the first market system by passing each
+headline through the V2 sentiment classifier and reusing its label and confidence
+as market direction. It deliberately uses no price, date, fundamental, or agent
+inputs. The pinned report records 46.67% accuracy, 45.66% macro F1, and 50.00%
+expected calibration error.
+
 ## Commands
 
 ```bash
@@ -90,6 +96,7 @@ uv run news-signal-v2 analyse --company "NVIDIA" --ticker NVDA --limit 5
 
 uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
 uv run news-signal-eval --system v2 --output reports/finentity-sentiment-v2.json
+uv run news-signal-eval --task market --system v2 --output reports/finmarba-market-sentiment-v2.json
 uv run pytest
 ```
 
@@ -125,8 +132,9 @@ downloaded articles, or model weights.
 - NewsAPI coverage and publisher extraction remain externally constrained.
 - Target evidence selection is a deterministic baseline.
 - FinEntity evaluates sentiment only; FinMarBa evaluates market direction only.
-- No production system implements the market prediction contract yet.
+- The sentiment baseline implements market prediction, but no agent or
+  point-in-time company-signal providers exist yet.
 - There is no HTTP API, signal aggregation, deployment, or market backtest yet.
 
-Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-4 are
-implemented; Step 5 is the next application change.
+Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-5 are
+implemented; Step 6 is the next application change.

@@ -7,8 +7,10 @@ from pathlib import Path
 from time import perf_counter
 from typing import Literal, cast
 
+from eval.market_eval import MarketEvaluationReport, evaluate_finmarba, load_finmarba
+from eval.sentiment_baseline import SentimentMarketBaseline
 from eval.sentiment_eval import (
-    SentimentLabel,
+    SentimentEvaluationReport,
     SentimentPrediction,
     evaluate_finentity,
     load_finentity,
@@ -20,6 +22,7 @@ from news_signal_v2.config import load_sentiment_model_name as load_v2_model_nam
 from news_signal_v2.pipeline import TargetEvidenceSelector
 
 SystemVersion = Literal["v1", "v2"]
+TaskName = Literal["sentiment", "market"]
 
 
 class V1SentimentSystem:
@@ -56,8 +59,11 @@ class V2SentimentSystem:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate a news signal system")
+    parser.add_argument(
+        "--task", choices=("sentiment", "market"), default="sentiment"
+    )
     parser.add_argument("--system", choices=("v1", "v2"), required=True)
-    parser.add_argument("--dataset", type=Path, default=Path("data/finentity.json"))
+    parser.add_argument("--dataset", type=Path)
     parser.add_argument("--model")
     parser.add_argument("--output", type=Path)
     return parser
@@ -65,22 +71,19 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    task = cast(TaskName, args.task)
     system_version = cast(SystemVersion, args.system)
-    model_name = args.model or _default_model(system_version)
-    system, classifier, target_usage = _build_system(system_version, model_name)
+    if task == "market" and system_version != "v2":
+        raise SystemExit("Market evaluation currently supports only --system v2")
 
-    started = perf_counter()
-    classifier.load()
-    model_load_seconds = perf_counter() - started
-    report = evaluate_finentity(
-        system,
-        load_finentity(args.dataset),
-        system_name=system_version,
-        model_name=model_name,
-        model_revision=classifier.model_revision,
-        model_load_seconds=model_load_seconds,
-        target_usage=target_usage,
-    )
+    model_name = args.model or _default_model(system_version)
+    if task == "market":
+        dataset_path = args.dataset or Path("data/finmarba.csv")
+        report = _evaluate_market(model_name, dataset_path)
+    else:
+        dataset_path = args.dataset or Path("data/finentity.json")
+        report = _evaluate_sentiment(system_version, model_name, dataset_path)
+
     output = json.dumps(report.to_dict(), indent=2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -88,6 +91,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print(output)
     return 0
+
+
+def _evaluate_sentiment(
+    system_version: SystemVersion, model_name: str, dataset_path: Path
+) -> SentimentEvaluationReport:
+    system, classifier, target_usage = _build_system(system_version, model_name)
+
+    started = perf_counter()
+    classifier.load()
+    model_load_seconds = perf_counter() - started
+    report = evaluate_finentity(
+        system,
+        load_finentity(dataset_path),
+        system_name=system_version,
+        model_name=model_name,
+        model_revision=classifier.model_revision,
+        model_load_seconds=model_load_seconds,
+        target_usage=target_usage,
+    )
+    return report
+
+
+def _evaluate_market(model_name: str, dataset_path: Path) -> MarketEvaluationReport:
+    baseline, classifier = _build_market_baseline(model_name)
+    started = perf_counter()
+    classifier.load()
+    model_load_seconds = perf_counter() - started
+    return evaluate_finmarba(
+        baseline,
+        load_finmarba(dataset_path),
+        system_name="sentiment-v2-baseline",
+        model_name=model_name,
+        model_revision=classifier.model_revision,
+        model_load_seconds=model_load_seconds,
+    )
 
 
 def _default_model(system: SystemVersion) -> str:
@@ -115,3 +153,10 @@ def _build_system(
         classifier,
         "target selects the relevant sentence and its immediate context",
     )
+
+
+def _build_market_baseline(
+    model_name: str,
+) -> tuple[SentimentMarketBaseline, ModernFinBertSentimentClassifier]:
+    classifier = ModernFinBertSentimentClassifier(model_name)
+    return SentimentMarketBaseline(classifier), classifier
