@@ -1,13 +1,13 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-08-28
+Last reviewed: 2026-08-30
 
 ## Purpose
 
 This repository contains comparable V1 and V2 financial-news pipelines plus an
-independent sentiment evaluator. V1 preserves the modernised legacy behavior. V2
-adds broader ingestion, stronger article extraction, company-specific evidence,
-and an updated sentiment model.
+an independent evaluation package. V1 preserves the modernised legacy behavior.
+V2 adds broader ingestion, stronger article extraction, company-specific
+evidence, and an updated sentiment model.
 
 Neither version predicts company or share-price performance. Keep that claim out
 of documentation until a leakage-safe backtest exists.
@@ -16,13 +16,18 @@ of documentation until a leakage-safe backtest exists.
 
 ```text
 src/
-  eval/                    # FinEntity loading, metrics, reports, evaluation CLI
+  eval/
+    sentiment_eval.py      # FinEntity semantic-sentiment evaluation
+    market_eval.py         # FinMarBa market-direction evaluation
+    metrics.py             # shared classification, calibration and latency metrics
+    models.py              # shared labels and prediction types
   news_signal_v1/          # preserved NewsAPI/newspaper3k/DistilRoBERTa baseline
     entrypoints/           # V1 CLI and reusable agent tool
   news_signal_v2/          # improved ingestion and analysis pipeline
     entrypoints/           # V2 CLI and reusable agent tool
 tests/                     # offline pytest suite for all three packages
 data/finentity.json        # pinned entity-level sentiment benchmark
+data/finmarba.csv          # pinned released market-direction subset
 reports/                   # generated evaluation reports
 ```
 
@@ -55,9 +60,9 @@ direct NewsAPI request + optional domains + optional ticker
 
 ## Evaluation
 
-`eval` owns FinEntity parsing and every metric. It depends only on a small
-`SentimentSystem.predict(target, text)` protocol, so neither V1 nor V2 owns its
-benchmark logic. The CLI adapters make their different behavior explicit:
+`eval.sentiment_eval` owns FinEntity parsing and depends on the small
+`SentimentSystem.predict(target, text)` protocol. The CLI adapters make the
+systems' different behavior explicit:
 
 - V1 classifies the whole paragraph and ignores the entity target.
 - V2 uses the entity target to select evidence before classification.
@@ -66,6 +71,12 @@ Reports contain accuracy, macro F1, per-class precision/recall/F1, confusion
 matrix, calibration, per-annotation latency, dataset diagnostics, a mixed-label
 slice, and high-confidence errors. Dataset revision and SHA-256, model revision,
 runtime versions, failures, and target usage are recorded for reproducibility.
+
+`eval.market_eval` owns the pinned released FinMarBa subset and defines
+`MarketSystem.predict(as_of, ticker, headline)`. It reuses the same metrics but
+compares predictions with market-derived direction rather than semantic
+sentiment. The public subset has 8,142 rows covering 2010-2011 and yields 9,978
+labelled ticker examples; it is not the full corpus described by the paper.
 
 ## Commands
 
@@ -113,8 +124,9 @@ downloaded articles, or model weights.
 - Processing is sequential and has no retry, cache, persistence, or tracing.
 - NewsAPI coverage and publisher extraction remain externally constrained.
 - Target evidence selection is a deterministic baseline.
-- FinEntity evaluates sentiment only, not ingestion or extraction quality.
+- FinEntity evaluates sentiment only; FinMarBa evaluates market direction only.
+- No production system implements the market prediction contract yet.
 - There is no HTTP API, signal aggregation, deployment, or market backtest yet.
 
-Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-3 are
-implemented; Step 4 is the next application change.
+Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-4 are
+implemented; Step 5 is the next application change.

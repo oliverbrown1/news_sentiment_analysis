@@ -33,10 +33,14 @@ uv run news-signal-v2 analyse --company "Rolls-Royce Holdings"
 - **Article processing:** V1 uses `newspaper3k` and NLTK to create a general summary; V2 uses Trafilatura to extract the article body, then selects sentences mentioning the target company or ticker.
 - **Sentiment:** V1 uses the legacy DistilRoBERTa model; V2 uses ModernFinBERT and improves FinEntity accuracy from 69.03% to 75.41% and macro F1 from 69.58% to 75.38%.
 
-## Evaluate Sentiment
+## Evaluation
 
-Both classifiers use the same model-independent `eval` package and pinned
-FinEntity entity-sentiment dataset:
+The model-independent `eval` package contains two task-specific evaluators:
+
+- `sentiment_eval` uses FinEntity to evaluate semantic financial sentiment.
+- `market_eval` uses FinMarBa to evaluate market-direction predictions for dated headlines and tickers.
+
+V1 and V2 sentiment reports are generated with:
 
 ```bash
 uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
@@ -62,6 +66,7 @@ same pipeline and loaded sentiment model.
 The first real analysis may download the configured Hugging Face model, pending fix to this cold start issue. 
 
 ## Testing
+
 For structural/integrity unit tests, execute the below
 
 ```bash

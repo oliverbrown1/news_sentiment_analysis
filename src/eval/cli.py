@@ -7,7 +7,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Literal, cast
 
-from eval import (
+from eval.sentiment_eval import (
     SentimentLabel,
     SentimentPrediction,
     evaluate_finentity,

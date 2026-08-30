@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from eval import (
+from eval.sentiment_eval import (
     EvaluationDataError,
     SentimentPrediction,
     evaluate_finentity,
