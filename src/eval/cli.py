@@ -7,6 +7,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Literal, cast
 
+from eval.arguments import ARGUMENTS
 from eval.market_eval import MarketEvaluationReport, evaluate_finmarba, load_finmarba
 from eval.sentiment_baseline import SentimentMarketBaseline
 from eval.sentiment_eval import (
@@ -60,12 +61,20 @@ class V2SentimentSystem:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate a news signal system")
     parser.add_argument(
-        "--task", choices=("sentiment", "market"), default="sentiment"
+        "--task",
+        choices=("sentiment", "market"),
+        default="sentiment",
+        help=ARGUMENTS["task"],
     )
-    parser.add_argument("--system", choices=("v1", "v2"), required=True)
-    parser.add_argument("--dataset", type=Path)
-    parser.add_argument("--model")
-    parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--system",
+        choices=("v1", "v2"),
+        required=True,
+        help=ARGUMENTS["system"],
+    )
+    parser.add_argument("--dataset", type=Path, help=ARGUMENTS["dataset"])
+    parser.add_argument("--model", help=ARGUMENTS["model"])
+    parser.add_argument("--output", type=Path, help=ARGUMENTS["output"])
     return parser
 
 

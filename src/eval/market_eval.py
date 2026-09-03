@@ -49,7 +49,7 @@ LABEL_BY_VALUE: dict[int, MarketDirection] = {
 
 class MarketSystem(Protocol):
     def predict(
-        self, as_of: date, ticker: str, headline: str
+        self, cutoff_date: date, ticker: str, headline: str
     ) -> MarketPrediction: ...
 
 
@@ -57,7 +57,7 @@ class MarketSystem(Protocol):
 class FinMarBaExample:
     example_id: int
     source_row: int
-    as_of: date
+    cutoff_date: date
     ticker: str
     headline: str
     label: MarketDirection
@@ -135,7 +135,7 @@ def load_finmarba(path: Path) -> FinMarBaDataset:
     for source_row, row in enumerate(reader, start=2):
         source_rows += 1
         try:
-            as_of = date.fromisoformat(row["Date"].strip())
+            cutoff_date = date.fromisoformat(row["Date"].strip())
             headline = row["Title"].strip()
             tickers = _parse_tickers(row["Tickers"])
             sentiments = _parse_mapping(row["Sentiment"], "Sentiment")
@@ -161,7 +161,7 @@ def load_finmarba(path: Path) -> FinMarBaDataset:
             if return_pct is None:
                 missing_ticker_returns += 1
 
-            key = (as_of, ticker, headline.casefold())
+            key = (cutoff_date, ticker, headline.casefold())
             if key in seen:
                 duplicate_examples += 1
             seen.add(key)
@@ -169,7 +169,7 @@ def load_finmarba(path: Path) -> FinMarBaDataset:
                 FinMarBaExample(
                     example_id=len(examples),
                     source_row=source_row,
-                    as_of=as_of,
+                    cutoff_date=cutoff_date,
                     ticker=ticker,
                     headline=headline,
                     label=label,
@@ -208,7 +208,7 @@ def evaluate_finmarba(
         started = perf_counter()
         try:
             prediction = system.predict(
-                example.as_of, example.ticker, example.headline
+                example.cutoff_date, example.ticker, example.headline
             )
         except (RuntimeError, ValueError) as exc:
             failures.append(
@@ -244,8 +244,12 @@ def evaluate_finmarba(
             "sha256": dataset.sha256,
             "source_rows": dataset.source_rows,
             "examples": len(dataset.examples),
-            "date_start": min(item.as_of for item in dataset.examples).isoformat(),
-            "date_end": max(item.as_of for item in dataset.examples).isoformat(),
+            "date_start": min(
+                item.cutoff_date for item in dataset.examples
+            ).isoformat(),
+            "date_end": max(
+                item.cutoff_date for item in dataset.examples
+            ).isoformat(),
             "label_distribution": dict(label_distribution),
             "diagnostics": {
                 "missing_ticker_labels": dataset.missing_ticker_labels,
@@ -338,7 +342,7 @@ def _error_analysis(scored: list[_ScoredExample]) -> dict[str, object]:
         "highest_confidence_errors": [
             {
                 "example_id": item.example.example_id,
-                "date": item.example.as_of.isoformat(),
+                "date": item.example.cutoff_date.isoformat(),
                 "ticker": item.example.ticker,
                 "headline": item.example.headline,
                 "expected": item.example.label,
