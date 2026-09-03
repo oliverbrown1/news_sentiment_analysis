@@ -15,9 +15,9 @@ class SentimentMarketBaseline:
         self._predictions: dict[str, MarketPrediction] = {}
 
     def predict(
-        self, as_of: date, ticker: str, headline: str
+        self, cutoff_date: date, ticker: str, headline: str
     ) -> MarketPrediction:
-        del as_of
+        del cutoff_date
         if headline in self._predictions:
             return self._predictions[headline]
 

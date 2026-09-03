@@ -18,6 +18,7 @@ dependencies = [
     "torch>=2.6,<3",
     "trafilatura>=2.0,<3",
     "transformers>=5.2,<6",
+    "yfinance>=0.2.65,<1",
 ]
 
 [dependency-groups]
@@ -28,6 +29,7 @@ news-signal = "news_signal_v2.entrypoints.cli:main"
 news-signal-v1 = "news_signal_v1.entrypoints.cli:main"
 news-signal-v2 = "news_signal_v2.entrypoints.cli:main"
 news-signal-eval = "eval.cli:main"
+company-signals = "company_signals.entrypoints.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
