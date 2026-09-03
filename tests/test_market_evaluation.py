@@ -14,7 +14,10 @@ from eval.models import EvaluationDataError
 
 
 class FakeMarketSystem:
-    def predict(self, as_of: date, ticker: str, headline: str) -> MarketPrediction:
+    def predict(
+        self, cutoff_date: date, ticker: str, headline: str
+    ) -> MarketPrediction:
+        del cutoff_date, headline
         if ticker == "AAA":
             return MarketPrediction("positive", 0.9)
         return MarketPrediction("neutral", 0.6)
@@ -99,5 +102,5 @@ def test_vendored_finmarba_dataset_is_pinned() -> None:
     assert dataset.missing_ticker_labels == 558
     assert dataset.missing_ticker_returns == 0
     assert dataset.sha256 == FINMARBA_SHA256
-    assert min(item.as_of for item in dataset.examples) == date(2010, 1, 4)
-    assert max(item.as_of for item in dataset.examples) == date(2011, 12, 30)
+    assert min(item.cutoff_date for item in dataset.examples) == date(2010, 1, 4)
+    assert max(item.cutoff_date for item in dataset.examples) == date(2011, 12, 30)

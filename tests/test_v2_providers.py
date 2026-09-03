@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from news_signal_v2.adapters import NewsApiProvider, TrafilaturaArticleExtractor
 
 
@@ -34,9 +36,12 @@ def test_v2_news_provider_uses_company_and_ticker_without_domain_filter() -> Non
         "test-key", api_url="https://newsapi.test/everything", client=client
     )
 
-    articles = provider.fetch("Example Ltd", "EXM", 7)
+    articles = provider.fetch(
+        "Example Ltd", "EXM", 7, datetime(2026, 8, 30, tzinfo=timezone.utc)
+    )
 
     assert client.params["q"] == '("Example Ltd" OR "EXM")'
+    assert client.params["to"] == "2026-08-30T00:00:00+00:00"
     assert "domains" not in client.params
     assert articles[0].source_name == "Reuters"
 
