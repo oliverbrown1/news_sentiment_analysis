@@ -6,6 +6,7 @@ from collections.abc import Sequence
 
 from news_signal_v1.application import build_pipeline
 from news_signal_v1.config import ConfigurationError, Settings
+from news_signal_v1.entrypoints.arguments import ARGUMENTS
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -13,9 +14,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     analyse = subparsers.add_parser("analyse", help="analyse news about a company")
-    analyse.add_argument("--company", required=True)
-    analyse.add_argument("--limit", type=int, default=5)
-    analyse.add_argument("--days", type=int)
+    analyse.add_argument("--company", required=True, help=ARGUMENTS["company"])
+    analyse.add_argument("--limit", type=int, default=5, help=ARGUMENTS["limit"])
+    analyse.add_argument("--days", type=int, help=ARGUMENTS["lookback_days"])
 
     return parser
 

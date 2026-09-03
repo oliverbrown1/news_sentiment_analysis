@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from html import unescape
+from datetime import datetime, timezone
 from typing import Protocol
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -21,7 +22,11 @@ TRACKING_PARAMETERS = {"fbclid", "gclid", "mc_cid", "mc_eid"}
 
 class NewsProvider(Protocol):
     def fetch(
-        self, company: str, ticker: str | None, lookback_days: int
+        self,
+        company: str,
+        ticker: str | None,
+        lookback_days: int,
+        cutoff_date: datetime | None = None,
     ) -> list[Article]: ...
 
 
@@ -84,6 +89,7 @@ class NewsAnalysisPipeline:
         ticker: str | None = None,
         limit: int = 5,
         lookback_days: int = 7,
+        cutoff_date: datetime | None = None,
     ) -> AnalysisResult:
         company = company.strip()
         ticker = ticker.strip().upper() if ticker and ticker.strip() else None
@@ -93,15 +99,34 @@ class NewsAnalysisPipeline:
             raise ValueError("limit must be at least 1")
         if lookback_days < 1:
             raise ValueError("lookback_days must be at least 1")
+        if cutoff_date is not None and cutoff_date.tzinfo is None:
+            raise ValueError("cutoff_date must include a timezone")
 
-        discovered = self._news_provider.fetch(company, ticker, lookback_days)
+        discovered = self._news_provider.fetch(
+            company, ticker, lookback_days, cutoff_date
+        )
         # handles duplicate articles as well by normalising URLs
         articles, duplicates_removed = _deduplicate(discovered)
         # tracks specific failures as well
         analysed: list[AnalysedArticle] = []
         failures: list[AnalysisFailure] = []
+        available_articles: list[Article] = []
+        articles_attempted = 0
 
         for article in articles:
+            if cutoff_date is not None and not _available_by(article, cutoff_date):
+                failures.append(
+                    AnalysisFailure(
+                        article.url,
+                        "availability",
+                        "article has no timestamp or was published after cutoff_date",
+                    )
+                )
+                continue
+            available_articles.append(article)
+
+        for article in available_articles:
+            articles_attempted += 1
             try:
                 # extract URLs, do not summarise content with NLTK
                 content = self._article_extractor.extract(article.url)
@@ -136,7 +161,19 @@ class NewsAnalysisPipeline:
             articles=tuple(analysed),
             failures=tuple(failures),
             duplicates_removed=duplicates_removed,
+            articles_eligible=len(available_articles),
+            articles_attempted=articles_attempted,
+            analysis_limit=limit,
         )
+
+
+def _available_by(article: Article, cutoff_date: datetime) -> bool:
+    if article.published_at is None:
+        return False
+    published_at = article.published_at
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+    return published_at <= cutoff_date
 
 
 def _deduplicate(articles: list[Article]) -> tuple[list[Article], int]:

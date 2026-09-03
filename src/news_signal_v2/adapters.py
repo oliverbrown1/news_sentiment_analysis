@@ -41,9 +41,16 @@ class NewsApiProvider:
         self._client = client
 
     def fetch(
-        self, company: str, ticker: str | None, lookback_days: int
+        self,
+        company: str,
+        ticker: str | None,
+        lookback_days: int,
+        cutoff_date: datetime | None = None,
     ) -> list[Article]:
-        to_date = datetime.now(timezone.utc)
+        to_date = cutoff_date or datetime.now(timezone.utc)
+        if to_date.tzinfo is None:
+            raise ValueError("cutoff_date must include a timezone")
+        to_date = to_date.astimezone(timezone.utc)
         from_date = to_date - timedelta(days=lookback_days)
         query = f'"{company}"'
         if ticker:
@@ -51,8 +58,8 @@ class NewsApiProvider:
 
         params: dict[str, str | int] = {
             "q": query,
-            "from": from_date.date().isoformat(),
-            "to": to_date.date().isoformat(),
+            "from": from_date.isoformat(),
+            "to": to_date.isoformat(),
             "sortBy": "relevancy",
             "language": "en",
             "pageSize": 100,
@@ -97,6 +104,10 @@ class NewsApiProvider:
                 parsed_date = datetime.fromisoformat(
                     str(published_at).replace("Z", "+00:00")
                 )
+                if parsed_date.tzinfo is None:
+                    parsed_date = parsed_date.replace(tzinfo=timezone.utc)
+                else:
+                    parsed_date = parsed_date.astimezone(timezone.utc)
             except ValueError as exc:
                 raise NewsProviderError("NewsAPI article has an invalid date") from exc
         author = item.get("author")

@@ -53,7 +53,7 @@ class AnalysedArticle:
 @dataclass(frozen=True, slots=True)
 class AnalysisFailure:
     url: str
-    stage: Literal["extraction", "relevance", "sentiment"]
+    stage: Literal["availability", "extraction", "relevance", "sentiment"]
     reason: str
 
 
@@ -64,6 +64,9 @@ class AnalysisResult:
     articles: tuple[AnalysedArticle, ...]
     failures: tuple[AnalysisFailure, ...] = ()
     duplicates_removed: int = 0
+    articles_eligible: int = 0
+    articles_attempted: int = 0
+    analysis_limit: int = 0
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
