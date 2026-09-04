@@ -1,6 +1,8 @@
+import json
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
 
+from company_signals.entrypoints.tools import CompanySignalTools
 from company_signals.models import Filing, PriceBar, SignalFailure
 from company_signals.pipeline import CompanySignalPipeline
 from news_signal_v2.models import (
@@ -105,6 +107,52 @@ def test_pipeline_collects_typed_signals_and_preserves_evidence() -> None:
     assert result.failures == ()
 
 
+def test_pipeline_components_return_only_their_own_signals() -> None:
+    cutoff_date = datetime(2024, 2, 20, tzinfo=timezone.utc)
+    pipeline = CompanySignalPipeline(
+        FakeNewsAnalyser(cutoff_date - timedelta(hours=3)),
+        FakePriceProvider(),
+        FakeFilingProvider(),
+    )
+
+    news = pipeline.get_news_signals("Example Ltd", "exm", cutoff_date)
+    market = pipeline.get_market_signals("exm", cutoff_date)
+    filing = pipeline.get_filing_metadata("exm", cutoff_date)
+
+    assert {signal.group for signal in news.signals} == {"news"}
+    assert {item.kind for item in news.evidence} == {"news"}
+    assert news.news_stats is not None
+    assert news.to_dict()["evidence"][0]["excerpt"] == "Example raised guidance."
+
+    assert {signal.group for signal in market.signals} == {
+        "price_momentum",
+        "market_activity",
+        "relative_performance",
+    }
+    assert market.evidence == ()
+    assert "news_stats" not in market.to_dict()
+
+    assert {signal.group for signal in filing.signals} == {"fundamental"}
+    assert {item.kind for item in filing.evidence} == {"filing"}
+
+
+def test_tool_results_are_json_serialisable() -> None:
+    cutoff_date = datetime(2024, 2, 20, tzinfo=timezone.utc)
+    pipeline = CompanySignalPipeline(
+        FakeNewsAnalyser(cutoff_date - timedelta(hours=3)),
+        FakePriceProvider(),
+        FakeFilingProvider(),
+    )
+
+    result = CompanySignalTools(pipeline).get_news_signals(
+        "Example Ltd", "EXM", cutoff_date
+    )
+
+    json.dumps(result)
+    assert result["signals"][0]["observed_at"].endswith("+00:00")
+    assert result["evidence"][0]["available_at"].endswith("+00:00")
+
+
 def test_bundle_output_is_compact_unless_verbose() -> None:
     cutoff_date = datetime(2024, 2, 20, tzinfo=timezone.utc)
     pipeline = CompanySignalPipeline(
@@ -134,6 +182,13 @@ def test_bundle_output_is_compact_unless_verbose() -> None:
     assert compact["failures"] == []
     assert verbose["evidence"][0]["excerpt"] == "Example raised guidance."
     assert verbose["failures"][0]["reason"] == "blocked"
+
+    component = replace(
+        pipeline.get_news_signals("Example Ltd", "EXM", cutoff_date),
+        failures=result.failures,
+    ).to_dict()
+    assert component["evidence"][0]["excerpt"] == "Example raised guidance."
+    assert component["failures"] == []
 
     fetch_failure = replace(
         result,

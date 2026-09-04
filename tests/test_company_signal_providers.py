@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from company_signals.providers import (
     SEC_SUBMISSIONS_URL,
     SEC_TICKERS_URL,
+    SecCompanyResolver,
     SecFilingProvider,
 )
 
@@ -60,3 +61,19 @@ def test_sec_provider_selects_latest_filing_available_before_cutoff_date() -> No
     assert filing.form == "10-Q"
     assert filing.accession_number == "0001-24-000001"
     assert client.headers["User-Agent"] == "Oliver test@example.com"
+
+
+def test_sec_company_resolver_matches_name_and_rejects_wrong_ticker() -> None:
+    client = FakeClient(
+        {
+            SEC_TICKERS_URL: {
+                "0": {"title": "NVIDIA CORP", "ticker": "NVDA", "cik_str": 1},
+                "1": {"title": "TESLA INC", "ticker": "TSLA", "cik_str": 2},
+            }
+        }
+    )
+    resolver = SecCompanyResolver("Oliver test@example.com", client)
+
+    assert resolver.find("NVIDIA", "nvda")[0].ticker == "NVDA"
+    assert resolver.find("NVDA")[0].company == "NVIDIA CORP"
+    assert resolver.find("NVIDIA", "TSLA") == []
