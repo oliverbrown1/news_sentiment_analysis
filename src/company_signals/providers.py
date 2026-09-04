@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from company_signals.models import Filing, PriceBar, SignalProviderError
+from company_signals.models import CompanyMatch, Filing, PriceBar, SignalProviderError
 
 SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions"
@@ -25,6 +25,57 @@ class FilingProvider(Protocol):
     def latest(
         self, ticker: str, cutoff_date: datetime, forms: tuple[str, ...]
     ) -> Filing | None: ...
+
+
+class SecCompanyResolver:
+    def __init__(self, user_agent: str, client: Any | None = None) -> None:
+        if not user_agent.strip():
+            raise ValueError("SEC user agent cannot be empty")
+        self._client = client or httpx.Client(timeout=20.0)
+        self._headers = {"User-Agent": user_agent.strip(), "Accept": "application/json"}
+        self._companies: tuple[CompanyMatch, ...] | None = None
+
+    def find(self, company: str, ticker: str | None = None) -> list[CompanyMatch]:
+        company = company.strip()
+        ticker = ticker.strip().upper() if ticker else None
+        if not company:
+            raise ValueError("company cannot be empty")
+
+        companies = self._load_companies()
+        if ticker:
+            match = next((item for item in companies if item.ticker == ticker), None)
+            if match is None or not _company_names_match(company, match.company):
+                return []
+            return [match]
+
+        query = company.casefold()
+        ticker_match = [item for item in companies if item.ticker.casefold() == query]
+        if ticker_match:
+            return ticker_match
+        matches = [item for item in companies if query in item.company.casefold()]
+        return sorted(
+            matches,
+            key=lambda item: (not item.company.casefold().startswith(query), item.company),
+        )[:5]
+
+    def _load_companies(self) -> tuple[CompanyMatch, ...]:
+        if self._companies is None:
+            try:
+                response = self._client.get(SEC_TICKERS_URL, headers=self._headers)
+                response.raise_for_status()
+                payload = response.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                raise SignalProviderError("SEC company lookup failed") from exc
+            if not isinstance(payload, dict):
+                raise SignalProviderError("SEC returned invalid company data")
+            self._companies = tuple(
+                CompanyMatch(str(item["title"]).strip(), str(item["ticker"]).upper())
+                for item in payload.values()
+                if isinstance(item, dict)
+                and item.get("title")
+                and item.get("ticker")
+            )
+        return self._companies
 
 
 class YFinancePriceProvider:
@@ -199,3 +250,9 @@ def _accepted_at(accepted: Any, index: int, filing_date: Any) -> datetime:
             pass
     day = date.fromisoformat(str(filing_date))
     return datetime.combine(day + timedelta(days=1), time.min, timezone.utc)
+
+
+def _company_names_match(query: str, canonical: str) -> bool:
+    query_name = query.casefold().strip()
+    canonical_name = canonical.casefold().strip()
+    return query_name in canonical_name or canonical_name in query_name

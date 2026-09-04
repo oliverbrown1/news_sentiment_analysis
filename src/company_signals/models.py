@@ -20,6 +20,12 @@ class SignalProviderError(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class CompanyMatch:
+    company: str
+    ticker: str
+
+
+@dataclass(frozen=True, slots=True)
 class PriceBar:
     session_date: date
     open: float
@@ -92,6 +98,27 @@ class NewsStats:
 
 
 @dataclass(frozen=True, slots=True)
+class SignalResult:
+    signals: tuple[Signal, ...] = ()
+    evidence: tuple[EvidenceReference, ...] = ()
+    failures: tuple[SignalFailure, ...] = ()
+    # only for news
+    news_stats: NewsStats | None = None
+
+    def to_dict(
+        self,
+        *,
+        include_excerpts: bool = True,
+        verbose_failures: bool = False,
+    ) -> dict[str, object]:
+        return _serialise_result(
+            asdict(self),
+            include_excerpts=include_excerpts,
+            verbose_failures=verbose_failures,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class SignalBundle:
     company: str
     ticker: str
@@ -103,27 +130,50 @@ class SignalBundle:
     failures: tuple[SignalFailure, ...] = ()
 
     def to_dict(self, *, verbose: bool = False) -> dict[str, object]:
-        result = asdict(self)
-        evidence = result["evidence"]
-        if isinstance(evidence, (list, tuple)):
-            for item in evidence:
-                if not isinstance(item, dict):
-                    continue
-                if not verbose:
-                    item.pop("excerpt", None)
-                for key in tuple(item):
-                    if item[key] is None:
-                        item.pop(key)
+        return _serialise_result(
+            asdict(self),
+            include_excerpts=verbose,
+            verbose_failures=verbose,
+        )
 
-        if not verbose:
-            summaries: dict[tuple[str, str], int] = {}
-            for failure in self.failures:
-                if failure.source == "news" and failure.stage != "fetch":
+
+def _serialise_result(
+    result: dict[str, object],
+    *,
+    include_excerpts: bool,
+    verbose_failures: bool,
+) -> dict[str, object]:
+    if result.get("news_stats") is None:
+        result.pop("news_stats", None)
+
+    evidence = result["evidence"]
+    if isinstance(evidence, (list, tuple)):
+        for item in evidence:
+            if not isinstance(item, dict):
+                continue
+            if not include_excerpts:
+                item.pop("excerpt", None)
+            for key in tuple(item):
+                if item[key] is None:
+                    item.pop(key)
+
+    if not verbose_failures:
+        failures = result["failures"]
+        summaries: dict[tuple[str, str], int] = {}
+        if isinstance(failures, (list, tuple)):
+            for failure in failures:
+                if not isinstance(failure, dict):
                     continue
-                key = (failure.source, failure.stage)
+                source = failure.get("source")
+                stage = failure.get("stage")
+                if not isinstance(source, str) or not isinstance(stage, str):
+                    continue
+                if source == "news" and stage != "fetch":
+                    continue
+                key = (source, stage)
                 summaries[key] = summaries.get(key, 0) + 1
-            result["failures"] = [
-                {"source": source, "stage": stage, "count": count}
-                for (source, stage), count in summaries.items()
-            ]
-        return result
+        result["failures"] = [
+            {"source": source, "stage": stage, "count": count}
+            for (source, stage), count in summaries.items()
+        ]
+    return result

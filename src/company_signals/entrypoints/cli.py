@@ -3,10 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
-from datetime import date, datetime, time, timezone
 
 from company_signals.application import build_pipeline
-from company_signals.entrypoints.arguments import ARGUMENTS
+from company_signals.entrypoints.arguments import ARGUMENTS, parse_cutoff_date
 from news_signal_v2.config import ConfigurationError
 
 
@@ -23,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument(
         "--cutoff-date",
         required=True,
-        type=_parse_cutoff_date,
+        type=parse_cutoff_date,
         help=ARGUMENTS["cutoff_date"],
     )
     collect.add_argument(
@@ -66,19 +65,3 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit(f"Configuration error: {exc}") from exc
     print(json.dumps(result.to_dict(verbose=args.verbose), indent=2, default=str))
     return 0
-
-
-def _parse_cutoff_date(value: str) -> datetime:
-    try:
-        if "T" not in value:
-            return datetime.combine(date.fromisoformat(value), time.min, timezone.utc)
-        result = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            "cutoff-date must be an ISO date or datetime"
-        ) from exc
-    if result.tzinfo is None:
-        raise argparse.ArgumentTypeError(
-            "cutoff-date datetime must include a timezone"
-        )
-    return result.astimezone(timezone.utc)

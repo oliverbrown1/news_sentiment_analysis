@@ -1,16 +1,16 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-08-30
+Last reviewed: 2026-09-04
 
 ## Purpose
 
 This repository contains comparable V1 and V2 financial-news pipelines plus an
-independent evaluation package. V1 preserves the modernised legacy behavior.
+independent evaluation package and a Google ADK market forecasting agent. V1 preserves the modernised legacy behavior.
 V2 adds broader ingestion, stronger article extraction, company-specific
 evidence, and an updated sentiment model.
 
-Neither version predicts company or share-price performance. Keep that claim out
-of documentation until a leakage-safe backtest exists.
+The agent produces an unvalidated next-trading-day return forecast. Do not make
+predictive-performance claims until leakage-safe evaluation and backtesting exist.
 
 ## Repository Layout
 
@@ -27,6 +27,7 @@ src/
     entrypoints/           # V2 CLI and reusable agent tool
   company_signals/         # point-in-time news, market and filing signals
     entrypoints/           # signal CLI, tool and shared argument descriptions
+  market_signal_agent/     # conversational and locked-evaluation ADK runtimes
 tests/                     # offline pytest suite for all packages
 data/finentity.json        # pinned entity-level sentiment benchmark
 data/finmarba.csv          # pinned released market-direction subset
@@ -69,6 +70,16 @@ dated V2 news analysis + Yahoo Finance OHLCV + dated SEC filings
   -> JSON or agent-tool dictionary
 ```
 
+Market signal agent:
+
+```text
+free-text chat -> verified SEC company selection -> guarded signal tools
+  -> next-trading-day percentage-return forecast with cited evidence
+```
+
+The evaluation runtime instead receives fixed company, ticker, benchmark and
+cutoff state, omits all context-changing tools and returns `MarketForecast` JSON.
+
 ## Evaluation
 
 `eval.sentiment_eval` owns FinEntity parsing and depends on the small
@@ -105,6 +116,7 @@ uv run python -m nltk.downloader punkt punkt_tab
 uv run news-signal-v1 analyse --company "NVIDIA" --limit 5
 uv run news-signal-v2 analyse --company "NVIDIA" --ticker NVDA --limit 5
 uv run company-signals collect --company "NVIDIA" --ticker NVDA --cutoff-date 2026-08-30
+uv run market-signal-agent chat
 
 uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
 uv run news-signal-eval --system v2 --output reports/finentity-sentiment-v2.json
@@ -129,6 +141,8 @@ evidence excerpts and individual failure details.
 - `NEWS_DOMAINS`: optional comma-separated V2 source filter; empty means no filter.
 - `NEWS_API_URL`: optional V2 endpoint, useful for controlled integration tests.
 - `SEC_USER_AGENT`: required for company signals and should include a contact email.
+- `GOOGLE_API_KEY`: used by Google ADK for Gemini requests.
+- `MARKET_SIGNAL_MODEL`: optional Gemini model, default `gemini-flash-latest`.
 
 The first real inference can download a Hugging Face model. Imports and unit
 tests must stay offline and side-effect free. Never commit `.env`, credentials,
@@ -150,9 +164,9 @@ downloaded articles, or model weights.
 - Processing is sequential and has no retry, cache, persistence, or tracing.
 - NewsAPI coverage and publisher extraction remain externally constrained.
 - Target evidence selection is a deterministic baseline.
-- FinEntity evaluates sentiment only; FinMarBa evaluates market direction only.
-- Point-in-time company signals are implemented, but no analysis agent uses them yet.
+- FinEntity evaluates sentiment; the current FinMarBa evaluator still evaluates direction.
+- Agent return regression and derived FinMarBa-class metrics remain Step 8 work.
 - There is no HTTP API, deployment, market backtest, cache, persistence, or tracing yet.
 
 Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-6 are
-implemented; Step 7 is the next application change.
+implemented; Step 8 is the next evaluation change.

@@ -1,4 +1,6 @@
+import argparse
 from collections.abc import Callable
+from datetime import date, datetime, time, timezone
 from typing import TypeVar
 
 CallableType = TypeVar("CallableType", bound=Callable[..., object])
@@ -26,3 +28,19 @@ def documented(
         return function
 
     return decorate
+
+
+def parse_cutoff_date(value: str) -> datetime:
+    try:
+        if "T" not in value:
+            return datetime.combine(date.fromisoformat(value), time.min, timezone.utc)
+        result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "cutoff-date must be an ISO date or datetime"
+        ) from exc
+    if result.tzinfo is None:
+        raise argparse.ArgumentTypeError(
+            "cutoff-date datetime must include a timezone"
+        )
+    return result.astimezone(timezone.utc)

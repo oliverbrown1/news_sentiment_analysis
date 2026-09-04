@@ -1,6 +1,6 @@
 # Financial News Signal
 
-A typed Python pipeline that retrieves recent financial news for a company,
+A typed Python pipeline that retrieves recent financial news for a company 
 extracts article summaries, and classifies their sentiment. Currently 2 versions, using pre-trained open-source Sentiment Analysis models on Hugging Face.
 
 ## Setup

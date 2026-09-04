@@ -9,6 +9,7 @@ description = "Comparable financial news sentiment pipelines"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "google-adk>=2.6,<3",
     "httpx>=0.28,<1",
     "lxml-html-clean>=0.4,<1",
     "newsapi-python>=0.2.7,<1",
@@ -30,6 +31,7 @@ news-signal-v1 = "news_signal_v1.entrypoints.cli:main"
 news-signal-v2 = "news_signal_v2.entrypoints.cli:main"
 news-signal-eval = "eval.cli:main"
 company-signals = "company_signals.entrypoints.cli:main"
+market-signal-agent = "market_signal_agent.entrypoints.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
