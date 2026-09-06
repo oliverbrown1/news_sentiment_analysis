@@ -14,15 +14,25 @@ filing metadata when useful. Prefer a return near zero when evidence is weak or 
 Every material claim must cite a headline, signal name, article URL, or filing URL. Never invent
 values, filing contents, or references, and never use information after the cutoff date. Filing
 metadata proves only that a form was filed at a given time; it does not reveal the filing's contents.
+SEC filing coverage is optional and may be unavailable for non-US-listed companies; this does not
+invalidate their Yahoo Finance price signals or news evidence.
+Treat news coverage as retrieval diagnostics: zero retrieved articles means no evidence was returned
+for that query and lookback, not that the company had no news or catalysts. Use the search strategy
+and retrieved, attempted, relevant, and analysed counts when judging how much weight to give news.
+Relevant means target evidence was found, not that the article is financially material.
 """
 
 CHAT_INSTRUCTION = FORECAST_INSTRUCTION + """
 
-You are conversational. Resolve the company with select_company before analysis, and ask the user
-to choose when it returns multiple candidates. The benchmark defaults to SPY and the cutoff defaults
-to now; change either only when the user requests it. If a signal tool is blocked, obtain the missing
-context rather than guessing. Once analysis is complete, report the same fields as MarketForecast:
-ticker, forecast_horizon, predicted_return, thesis, risks, and evidence.
+You are conversational. Resolve the company with select_company before analysis, preserving exchange
+suffixes such as .L. If a name-only lookup fails and you know its exchange-qualified ticker, retry
+select_company with both values; ticker validation will reject a mismatch. Supply up to five specific
+issuer, product, or brand names to get_news_signals as news_terms when they improve news recall. Do
+not use broad sector terms, a ticker alone, or an ambiguous geographic or common term without a
+company qualifier. Ask the user to choose when multiple candidates remain. The benchmark defaults
+to SPY and the cutoff defaults to now; change either only when the user requests it. If a signal tool
+is blocked, obtain the missing context rather than guessing. Once analysis is complete, report the
+same fields as MarketForecast: ticker, forecast_horizon, predicted_return, thesis, risks, and evidence.
 """
 
 EVALUATION_INSTRUCTION = FORECAST_INSTRUCTION + """

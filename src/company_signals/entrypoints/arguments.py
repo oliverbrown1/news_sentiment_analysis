@@ -7,11 +7,12 @@ CallableType = TypeVar("CallableType", bound=Callable[..., object])
 
 ARGUMENTS = {
     "company": "Company name used to search for news and label the result.",
-    "ticker": "Stock-market symbol used to retrieve prices and SEC filings.",
+    "ticker": "Listed symbol, including its exchange suffix when required.",
     "cutoff_date": "Latest timestamp data may have for point-in-time analysis.",
     "benchmark": "Market ticker used to compare the company's price performance.",
     "news_days": "Number of days before the cutoff to search for news.",
     "news_limit": "Maximum number of articles to analyse successfully.",
+    "news_terms": "Specific company or brand names to search in news titles.",
     "price_days": "Number of calendar days of price history to request.",
     "verbose": "Include article excerpts and individual failure details.",
 }

@@ -1,6 +1,6 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-09-04
+Last reviewed: 2026-09-06
 
 ## Purpose
 
@@ -53,7 +53,8 @@ NewsAPI SDK + fixed domain allowlist
 V2:
 
 ```text
-direct NewsAPI request + optional domains + optional ticker
+verified common company alias -> title-only NewsAPI search in configured domains
+  -> unrestricted title-search fallback when fewer than five candidates are returned
   -> canonical URL/title deduplication
   -> Trafilatura article body extraction
   -> target sentence and immediate-context selection
@@ -64,7 +65,7 @@ direct NewsAPI request + optional domains + optional ticker
 Company signals:
 
 ```text
-dated V2 news analysis + Yahoo Finance OHLCV + dated SEC filings
+dated V2 news analysis + global Yahoo Finance OHLCV + optional dated SEC filings
   -> deterministic news, momentum, activity, relative and filing signals
   -> timestamped values, failures and cited source evidence
   -> JSON or agent-tool dictionary
@@ -73,7 +74,8 @@ dated V2 news analysis + Yahoo Finance OHLCV + dated SEC filings
 Market signal agent:
 
 ```text
-free-text chat -> verified SEC company selection -> guarded signal tools
+free-text chat -> verified Yahoo Finance identity + agent-selected news terms
+  -> guarded signal tools
   -> next-trading-day percentage-return forecast with cited evidence
 ```
 
@@ -116,6 +118,7 @@ uv run python -m nltk.downloader punkt punkt_tab
 uv run news-signal-v1 analyse --company "NVIDIA" --limit 5
 uv run news-signal-v2 analyse --company "NVIDIA" --ticker NVDA --limit 5
 uv run company-signals collect --company "NVIDIA" --ticker NVDA --cutoff-date 2026-08-30
+uv run company-signals collect --company "International Airlines Group" --ticker IAG.L --cutoff-date 2026-09-06 --news-term "British Airways" --news-term "Iberia"
 uv run market-signal-agent chat
 
 uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
@@ -132,6 +135,18 @@ Company signal output is compact by default: it reports article coverage,
 sentiment-bearing references, and grouped failures. Add `--verbose` for full
 evidence excerpts and individual failure details.
 
+News coverage reports the quoted query and search strategy plus `retrieved`,
+`attempted`, `relevant`, and `analysed` counts. Zero retrieved articles means
+the query returned no evidence; it does not prove that no company news existed.
+`Relevant` means the selector found the company or ticker, not that the article
+was financially material.
+
+Company identity and news discovery are separate: Yahoo Finance verifies the
+company and exchange-qualified ticker, while each news request may provide up
+to five specific company or brand names as `news_terms`. V2 combines those
+terms into one title query; broad sector terms and bare ticker terms are not
+allowed. News terms are request parameters and are not stored in agent state.
+
 ## Configuration
 
 - `NEWS_API_KEY`: required for live news analysis, never for evaluation.
@@ -140,7 +155,7 @@ evidence excerpts and individual failure details.
 - `V2_SENTIMENT_MODEL`: optional V2 Hugging Face model identifier.
 - `NEWS_DOMAINS`: optional comma-separated V2 source filter; empty means no filter.
 - `NEWS_API_URL`: optional V2 endpoint, useful for controlled integration tests.
-- `SEC_USER_AGENT`: required for company signals and should include a contact email.
+- `SEC_USER_AGENT`: required for optional SEC filing lookup and should include a contact email.
 - `GOOGLE_API_KEY`: used by Google ADK for Gemini requests.
 - `MARKET_SIGNAL_MODEL`: optional Gemini model, default `gemini-flash-latest`.
 

@@ -30,6 +30,7 @@ class NewsAnalyser(Protocol):
         limit: int = 5,
         lookback_days: int = 7,
         cutoff_date: datetime | None = None,
+        search_terms: tuple[str, ...] | None = None,
     ) -> AnalysisResult: ...
 
 
@@ -53,6 +54,7 @@ class CompanySignalPipeline:
         benchmark: str = "SPY",
         news_days: int = 7,
         news_limit: int = 20,
+        news_terms: tuple[str, ...] | None = None,
         price_days: int = 45,
     ) -> SignalBundle:
         company = company.strip()
@@ -70,6 +72,7 @@ class CompanySignalPipeline:
             cutoff_date,
             news_days=news_days,
             news_limit=news_limit,
+            news_terms=news_terms,
         )
         market = self.get_market_signals(
             ticker,
@@ -85,7 +88,8 @@ class CompanySignalPipeline:
             cutoff_date=cutoff_date,
             benchmark=benchmark,
             signals=news.signals + market.signals + filing.signals,
-            news_stats=news.news_stats or NewsStats(0, 0, 0, news_limit),
+            news_stats=news.news_stats
+            or _empty_news_stats(company, news_days, news_limit),
             evidence=news.evidence + filing.evidence,
             failures=news.failures + market.failures + filing.failures,
         )
@@ -98,6 +102,7 @@ class CompanySignalPipeline:
         *,
         news_days: int = 7,
         news_limit: int = 20,
+        news_terms: tuple[str, ...] | None = None,
     ) -> SignalResult:
         company = company.strip()
         ticker = ticker.strip().upper()
@@ -114,6 +119,7 @@ class CompanySignalPipeline:
                 limit=news_limit,
                 lookback_days=news_days,
                 cutoff_date=cutoff_date,
+                search_terms=news_terms,
             )
             return SignalResult(
                 signals=tuple(calculate_news_signals(news_analysis, cutoff_date)),
@@ -135,16 +141,23 @@ class CompanySignalPipeline:
                     for failure in news_analysis.failures
                 ),
                 news_stats=NewsStats(
-                    eligible=news_analysis.articles_eligible,
+                    retrieved=news_analysis.articles_retrieved,
                     attempted=news_analysis.articles_attempted,
+                    relevant=news_analysis.articles_relevant,
                     analysed=len(news_analysis.articles),
                     limit=news_analysis.analysis_limit,
+                    lookback_days=news_analysis.lookback_days,
+                    strategy=news_analysis.search_strategy,
+                    query=news_analysis.search_query,
+                    terms=news_analysis.search_terms,
                 ),
             )
         except NewsProviderError as exc:
             return SignalResult(
                 failures=(SignalFailure("news", "fetch", str(exc)),),
-                news_stats=NewsStats(0, 0, 0, news_limit),
+                news_stats=_empty_news_stats(
+                    company, news_days, news_limit, news_terms
+                ),
             )
 
     def get_market_signals(
@@ -228,3 +241,26 @@ def _normalise_cutoff(value: datetime) -> datetime:
     if value.tzinfo is None:
         raise ValueError("cutoff_date must include a timezone")
     return value.astimezone(timezone.utc)
+
+
+def _empty_news_stats(
+    company: str,
+    lookback_days: int,
+    limit: int,
+    news_terms: tuple[str, ...] | None = None,
+) -> NewsStats:
+    terms = news_terms or (company,)
+    query = " OR ".join(f'"{term}"' for term in terms)
+    if len(terms) > 1:
+        query = f"({query})"
+    return NewsStats(
+        retrieved=0,
+        attempted=0,
+        relevant=0,
+        analysed=0,
+        limit=limit,
+        lookback_days=lookback_days,
+        strategy="failed",
+        query=query,
+        terms=terms,
+    )

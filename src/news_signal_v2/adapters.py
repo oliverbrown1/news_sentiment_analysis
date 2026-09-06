@@ -10,6 +10,7 @@ from news_signal_v2.models import (
     Article,
     ArticleExtractionError,
     NewsProviderError,
+    NewsSearchResult,
     SentimentClassificationError,
     SentimentLabel,
     SentimentResult,
@@ -31,33 +32,40 @@ class NewsApiProvider:
         *,
         api_url: str,
         domains: tuple[str, ...] = (),
+        fallback_threshold: int = 5,
         client: Any | None = None,
     ) -> None:
+        if fallback_threshold < 1:
+            raise ValueError("fallback_threshold must be at least 1")
         if client is None:
             client = httpx.Client(timeout=20.0)
         self._api_key = api_key
         self._api_url = api_url
         self._domains = domains
+        self._fallback_threshold = fallback_threshold
         self._client = client
 
     def fetch(
         self,
-        company: str,
+        search_terms: tuple[str, ...],
         ticker: str | None,
         lookback_days: int,
         cutoff_date: datetime | None = None,
-    ) -> list[Article]:
+    ) -> NewsSearchResult:
         to_date = cutoff_date or datetime.now(timezone.utc)
         if to_date.tzinfo is None:
             raise ValueError("cutoff_date must include a timezone")
         to_date = to_date.astimezone(timezone.utc)
         from_date = to_date - timedelta(days=lookback_days)
-        query = f'"{company}"'
-        if ticker:
-            query = f'("{company}" OR "{ticker}")'
+        quoted_terms = [f'"{term}"' for term in search_terms]
+        query = " OR ".join(quoted_terms)
+        if len(quoted_terms) > 1:
+            query = f"({query})"
+        del ticker
 
         params: dict[str, str | int] = {
             "q": query,
+            "searchIn": "title",
             "from": from_date.isoformat(),
             "to": to_date.isoformat(),
             "sortBy": "relevancy",
@@ -65,9 +73,21 @@ class NewsApiProvider:
             "pageSize": 100,
             "apiKey": self._api_key,
         }
-        if self._domains:
-            params["domains"] = ",".join(self._domains)
+        if not self._domains:
+            return NewsSearchResult(tuple(self._request(params)), "all_domains", query)
 
+        preferred_params = {**params, "domains": ",".join(self._domains)}
+        preferred = self._request(preferred_params)
+        if len(preferred) >= self._fallback_threshold:
+            return NewsSearchResult(tuple(preferred), "configured_domains", query)
+
+        # if not enough relevant articles scraped, will use unrestricted domains fallback
+        unrestricted = self._request(params)
+        return NewsSearchResult(
+            tuple(preferred + unrestricted), "all_domains_fallback", query
+        )
+
+    def _request(self, params: dict[str, str | int]) -> list[Article]:
         try:
             response = self._client.get(self._api_url, params=params)
             response.raise_for_status()

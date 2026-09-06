@@ -25,13 +25,22 @@ def calculate_news_signals(
     signals = [
         Signal(
             "news",
-            "articles_eligible",
-            result.articles_eligible,
+            "articles_retrieved",
+            result.articles_retrieved,
             observed_at,
             observed_at,
             "newsapi",
             "articles",
-        )
+        ),
+        Signal(
+            "news",
+            "articles_relevant",
+            result.articles_relevant,
+            observed_at,
+            observed_at,
+            "news_signal_v2",
+            "articles",
+        ),
     ]
     if not articles:
         return signals

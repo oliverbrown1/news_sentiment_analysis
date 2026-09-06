@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Protocol
@@ -27,13 +28,13 @@ class FilingProvider(Protocol):
     ) -> Filing | None: ...
 
 
-class SecCompanyResolver:
-    def __init__(self, user_agent: str, client: Any | None = None) -> None:
-        if not user_agent.strip():
-            raise ValueError("SEC user agent cannot be empty")
-        self._client = client or httpx.Client(timeout=20.0)
-        self._headers = {"User-Agent": user_agent.strip(), "Accept": "application/json"}
-        self._companies: tuple[CompanyMatch, ...] | None = None
+class YFinanceCompanyResolver:
+    def __init__(self, searcher: Callable[..., Any] | None = None) -> None:
+        if searcher is None:
+            import yfinance
+
+            searcher = yfinance.Search
+        self._search = searcher
 
     def find(self, company: str, ticker: str | None = None) -> list[CompanyMatch]:
         company = company.strip()
@@ -41,41 +42,42 @@ class SecCompanyResolver:
         if not company:
             raise ValueError("company cannot be empty")
 
-        companies = self._load_companies()
-        if ticker:
-            match = next((item for item in companies if item.ticker == ticker), None)
-            if match is None or not _company_names_match(company, match.company):
-                return []
-            return [match]
-
-        query = company.casefold()
-        ticker_match = [item for item in companies if item.ticker.casefold() == query]
-        if ticker_match:
-            return ticker_match
-        matches = [item for item in companies if query in item.company.casefold()]
-        return sorted(
-            matches,
-            key=lambda item: (not item.company.casefold().startswith(query), item.company),
-        )[:5]
-
-    def _load_companies(self) -> tuple[CompanyMatch, ...]:
-        if self._companies is None:
-            try:
-                response = self._client.get(SEC_TICKERS_URL, headers=self._headers)
-                response.raise_for_status()
-                payload = response.json()
-            except (httpx.HTTPError, ValueError) as exc:
-                raise SignalProviderError("SEC company lookup failed") from exc
-            if not isinstance(payload, dict):
-                raise SignalProviderError("SEC returned invalid company data")
-            self._companies = tuple(
-                CompanyMatch(str(item["title"]).strip(), str(item["ticker"]).upper())
-                for item in payload.values()
-                if isinstance(item, dict)
-                and item.get("title")
-                and item.get("ticker")
+        query = ticker or company
+        try:
+            result = self._search(
+                query,
+                max_results=8,
+                news_count=0,
+                lists_count=0,
+                include_cb=False,
+                recommended=0,
             )
-        return self._companies
+            quotes = result.quotes
+        except (OSError, RuntimeError, TypeError, ValueError) as exc:
+            raise SignalProviderError("Yahoo Finance company lookup failed") from exc
+        if not isinstance(quotes, list):
+            raise SignalProviderError("Yahoo Finance returned invalid company data")
+
+        matches = [
+            match
+            for item in quotes
+            if isinstance(item, dict)
+            and (match := _company_match(item)) is not None
+        ]
+        if ticker:
+            exact = next((match for match in matches if match.ticker == ticker), None)
+            if exact is None:
+                return []
+            if company.casefold() != ticker.casefold() and not _company_names_match(
+                company, exact.company
+            ):
+                return []
+            return [exact]
+        return [
+            match
+            for match in matches
+            if _company_names_match(company, match.company)
+        ][:5]
 
 
 class YFinancePriceProvider:
@@ -253,6 +255,27 @@ def _accepted_at(accepted: Any, index: int, filing_date: Any) -> datetime:
 
 
 def _company_names_match(query: str, canonical: str) -> bool:
-    query_name = query.casefold().strip()
-    canonical_name = canonical.casefold().strip()
-    return query_name in canonical_name or canonical_name in query_name
+    query_words = _name_words(query)
+    canonical_words = _name_words(canonical)
+    query_name = re.sub(r"[^a-z0-9]+", "", query.casefold())
+    canonical_name = re.sub(r"[^a-z0-9]+", "", canonical.casefold())
+    return (
+        query_name in canonical_name
+        or canonical_name in query_name
+        or query_words <= canonical_words
+        or canonical_words <= query_words
+    )
+
+
+def _name_words(value: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
+def _company_match(item: dict[str, Any]) -> CompanyMatch | None:
+    if str(item.get("quoteType", "")).upper() != "EQUITY":
+        return None
+    ticker = str(item.get("symbol", "")).strip().upper()
+    company = str(item.get("longname") or item.get("shortname") or "").strip()
+    if not ticker or not company:
+        return None
+    return CompanyMatch(company, ticker)

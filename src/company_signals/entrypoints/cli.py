@@ -38,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=ARGUMENTS["news_limit"],
     )
     collect.add_argument(
+        "--news-term",
+        dest="news_terms",
+        action="append",
+        help=ARGUMENTS["news_terms"],
+    )
+    collect.add_argument(
         "--price-days",
         type=int,
         default=45,
@@ -59,6 +65,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             benchmark=args.benchmark,
             news_days=args.news_days,
             news_limit=args.news_limit,
+            news_terms=tuple(args.news_terms) if args.news_terms else None,
             price_days=args.price_days,
         )
     except ConfigurationError as exc:

@@ -13,6 +13,7 @@ from news_signal_v2.models import (
     Article,
     ArticleExtractionError,
     EvidenceSelectionError,
+    NewsSearchResult,
     SentimentClassificationError,
     SentimentResult,
 )
@@ -23,11 +24,11 @@ TRACKING_PARAMETERS = {"fbclid", "gclid", "mc_cid", "mc_eid"}
 class NewsProvider(Protocol):
     def fetch(
         self,
-        company: str,
+        search_terms: tuple[str, ...],
         ticker: str | None,
         lookback_days: int,
         cutoff_date: datetime | None = None,
-    ) -> list[Article]: ...
+    ) -> NewsSearchResult: ...
 
 
 class ArticleExtractor(Protocol):
@@ -45,12 +46,20 @@ class TargetEvidenceSelector:
         self._max_characters = max_characters
 
     def select(
-        self, company: str, ticker: str | None, title: str, content: str
+        self,
+        company: str,
+        ticker: str | None,
+        title: str,
+        content: str,
+        aliases: tuple[str, ...] = (),
     ) -> str:
         sentences = _sentences(f"{title}. {content}")
         selected_indexes: set[int] = set()
+        targets = (company, *aliases)
         for index, sentence in enumerate(sentences):
-            company_matches = company.casefold() in sentence.casefold()
+            company_matches = any(
+                target.casefold() in sentence.casefold() for target in targets
+            )
             ticker_matches = bool(
                 ticker
                 and re.search(rf"\b{re.escape(ticker)}\b", sentence, re.IGNORECASE)
@@ -90,6 +99,7 @@ class NewsAnalysisPipeline:
         limit: int = 5,
         lookback_days: int = 7,
         cutoff_date: datetime | None = None,
+        search_terms: tuple[str, ...] | None = None,
     ) -> AnalysisResult:
         company = company.strip()
         ticker = ticker.strip().upper() if ticker and ticker.strip() else None
@@ -101,10 +111,12 @@ class NewsAnalysisPipeline:
             raise ValueError("lookback_days must be at least 1")
         if cutoff_date is not None and cutoff_date.tzinfo is None:
             raise ValueError("cutoff_date must include a timezone")
+        terms = _normalise_search_terms(search_terms or (company,))
 
-        discovered = self._news_provider.fetch(
-            company, ticker, lookback_days, cutoff_date
+        search = self._news_provider.fetch(
+            terms, ticker, lookback_days, cutoff_date
         )
+        discovered = list(search.articles)
         # handles duplicate articles as well by normalising URLs
         articles, duplicates_removed = _deduplicate(discovered)
         # tracks specific failures as well
@@ -112,6 +124,7 @@ class NewsAnalysisPipeline:
         failures: list[AnalysisFailure] = []
         available_articles: list[Article] = []
         articles_attempted = 0
+        articles_relevant = 0
 
         for article in articles:
             if cutoff_date is not None and not _available_by(article, cutoff_date):
@@ -137,11 +150,12 @@ class NewsAnalysisPipeline:
             try:
                 # select sentences with specific financial keywords that are relevant
                 evidence = self._evidence_selector.select(
-                    company, ticker, article.title, content
+                    company, ticker, article.title, content, terms
                 )
             except EvidenceSelectionError as exc:
                 failures.append(AnalysisFailure(article.url, "relevance", str(exc)))
                 continue
+            articles_relevant += 1
             try:
                 # classify sentiment
                 sentiment = self._sentiment_classifier.classify(
@@ -161,9 +175,14 @@ class NewsAnalysisPipeline:
             articles=tuple(analysed),
             failures=tuple(failures),
             duplicates_removed=duplicates_removed,
-            articles_eligible=len(available_articles),
+            articles_retrieved=len(available_articles),
             articles_attempted=articles_attempted,
+            articles_relevant=articles_relevant,
             analysis_limit=limit,
+            lookback_days=lookback_days,
+            search_strategy=search.strategy,
+            search_query=search.query,
+            search_terms=terms,
         )
 
 
@@ -174,6 +193,26 @@ def _available_by(article: Article, cutoff_date: datetime) -> bool:
     if published_at.tzinfo is None:
         published_at = published_at.replace(tzinfo=timezone.utc)
     return published_at <= cutoff_date
+
+
+def _normalise_search_terms(search_terms: tuple[str, ...]) -> tuple[str, ...]:
+    terms: list[str] = []
+    seen: set[str] = set()
+    for value in search_terms:
+        term = value.strip()
+        if not 2 <= len(term) <= 80:
+            raise ValueError("each search term must contain between 2 and 80 characters")
+        if '"' in term:
+            raise ValueError("search terms cannot contain quotes")
+        key = term.casefold()
+        if key not in seen:
+            seen.add(key)
+            terms.append(term)
+    if not terms:
+        raise ValueError("at least one search term is required")
+    if len(terms) > 5:
+        raise ValueError("at most five search terms may be supplied")
+    return tuple(terms)
 
 
 def _deduplicate(articles: list[Article]) -> tuple[list[Article], int]:

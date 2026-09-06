@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-import os
 from datetime import date, datetime
 
 from company_signals.application import build_pipeline
 from company_signals.entrypoints.arguments import documented
 from company_signals.pipeline import CompanySignalPipeline
-from company_signals.providers import SecCompanyResolver
+from company_signals.providers import YFinanceCompanyResolver
 
 
 class CompanySignalTools:
     def __init__(
         self,
         pipeline: CompanySignalPipeline,
-        company_resolver: SecCompanyResolver | None = None,
+        company_resolver: YFinanceCompanyResolver | None = None,
     ) -> None:
         self._pipeline = pipeline
         self._company_resolver = company_resolver
 
     @documented(
-        "Resolve a company name and optional ticker against the SEC company list.",
+        "Resolve a listed company and optional exchange-qualified ticker.",
         ("company", "ticker"),
     )
     def find_companies(
@@ -28,7 +27,10 @@ class CompanySignalTools:
         if self._company_resolver is None:
             raise RuntimeError("company resolver is not configured")
         return [
-            {"company": match.company, "ticker": match.ticker}
+            {
+                "company": match.company,
+                "ticker": match.ticker,
+            }
             for match in self._company_resolver.find(company, ticker)
         ]
 
@@ -41,6 +43,7 @@ class CompanySignalTools:
             "benchmark",
             "news_days",
             "news_limit",
+            "news_terms",
             "price_days",
             "verbose",
         ),
@@ -53,6 +56,7 @@ class CompanySignalTools:
         benchmark: str = "SPY",
         news_days: int = 7,
         news_limit: int = 20,
+        news_terms: tuple[str, ...] | None = None,
         price_days: int = 45,
         verbose: bool = False,
     ) -> dict[str, object]:
@@ -64,13 +68,21 @@ class CompanySignalTools:
                 benchmark=benchmark,
                 news_days=news_days,
                 news_limit=news_limit,
+                news_terms=news_terms,
                 price_days=price_days,
             ).to_dict(verbose=verbose)
         )
 
     @documented(
         "Calculate point-in-time news signals and return supporting evidence.",
-        ("company", "ticker", "cutoff_date", "news_days", "news_limit"),
+        (
+            "company",
+            "ticker",
+            "cutoff_date",
+            "news_days",
+            "news_limit",
+            "news_terms",
+        ),
     )
     def get_news_signals(
         self,
@@ -79,6 +91,7 @@ class CompanySignalTools:
         cutoff_date: datetime,
         news_days: int = 7,
         news_limit: int = 20,
+        news_terms: tuple[str, ...] | None = None,
     ) -> dict[str, object]:
         return _json_safe(
             self._pipeline.get_news_signals(
@@ -87,6 +100,7 @@ class CompanySignalTools:
                 cutoff_date,
                 news_days=news_days,
                 news_limit=news_limit,
+                news_terms=news_terms,
             ).to_dict()
         )
 
@@ -128,7 +142,7 @@ def build_tools() -> CompanySignalTools:
     pipeline = build_pipeline()
     return CompanySignalTools(
         pipeline,
-        SecCompanyResolver(os.environ.get("SEC_USER_AGENT", "")),
+        YFinanceCompanyResolver(),
     )
 
 

@@ -40,7 +40,10 @@ class AgentTools:
         if not matches:
             return {
                 "status": "not_found",
-                "message": "No matching SEC company was found; ask the user to clarify.",
+                "message": (
+                    "No matching listed company was found; retry with a known "
+                    "exchange-qualified ticker or ask the user to clarify."
+                ),
             }
         if len(matches) > 1:
             return {
@@ -89,19 +92,28 @@ class AgentTools:
         tool_context: ToolContext,
         news_days: NewsDays = 7,
         news_limit: NewsLimit = 20,
+        news_terms: list[str] | None = None,
     ) -> dict[str, object]:
         """Get sentiment signals and article evidence available by the cutoff.
 
         Args:
             news_days: Number of days of news to consider.
             news_limit: Maximum number of successfully analysed articles.
+            news_terms: Specific company or brand names to search in news titles.
         """
+        try:
+            terms = _normalise_news_terms(
+                _state_text(tool_context, "ticker"), news_terms
+            )
+        except ValueError as exc:
+            return {"status": "invalid", "message": str(exc)}
         return self._signals.get_news_signals(
             _state_text(tool_context, "company"),
             _state_text(tool_context, "ticker"),
             _state_date(tool_context),
             news_days=news_days,
             news_limit=news_limit,
+            news_terms=terms,
         )
 
     def get_market_signals(
@@ -162,8 +174,40 @@ def _state_date(tool_context: ToolContext) -> datetime:
 
 def _clear_company(tool_context: ToolContext) -> None:
     tool_context.state.update(
-        {"company": None, "ticker": None, "company_verified": False}
+        {
+            "company": None,
+            "ticker": None,
+            "company_verified": False,
+        }
     )
+
+
+def _normalise_news_terms(
+    ticker: str,
+    supplied: list[str] | None,
+) -> tuple[str, ...] | None:
+    if supplied is None:
+        return None
+    terms: list[str] = []
+    seen: set[str] = set()
+    bare_ticker = ticker.split(".", maxsplit=1)[0].casefold()
+    for value in supplied:
+        term = value.strip()
+        if not 2 <= len(term) <= 80:
+            raise ValueError("each news term must contain between 2 and 80 characters")
+        if '"' in term:
+            raise ValueError("news terms cannot contain quotes")
+        if term.casefold() in {ticker.casefold(), bare_ticker}:
+            raise ValueError("news terms cannot be the selected ticker alone")
+        key = term.casefold()
+        if key not in seen:
+            seen.add(key)
+            terms.append(term)
+    if len(terms) > 5:
+        raise ValueError("at most five news terms may be selected")
+    if not terms:
+        raise ValueError("at least one news term must be supplied")
+    return tuple(terms)
 
 
 def _parse_cutoff_date(value: str) -> datetime:

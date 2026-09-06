@@ -91,10 +91,15 @@ class EvidenceReference:
 
 @dataclass(frozen=True, slots=True)
 class NewsStats:
-    eligible: int
+    retrieved: int
     attempted: int
+    relevant: int
     analysed: int
     limit: int
+    lookback_days: int
+    strategy: str
+    query: str
+    terms: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
