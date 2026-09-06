@@ -3,7 +3,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from news_signal_v2.models import Article, EvidenceSelectionError, SentimentResult
+from news_signal_v2.models import (
+    Article,
+    EvidenceSelectionError,
+    NewsSearchResult,
+    SentimentResult,
+)
 from news_signal_v2.pipeline import NewsAnalysisPipeline, TargetEvidenceSelector
 
 
@@ -13,12 +18,16 @@ class FakeProvider:
 
     def fetch(
         self,
-        company: str,
+        search_terms: tuple[str, ...],
         ticker: str | None,
         lookback_days: int,
         cutoff_date: datetime | None = None,
-    ) -> list[Article]:
-        return self.articles
+    ) -> NewsSearchResult:
+        return NewsSearchResult(
+            tuple(self.articles),
+            "configured_domains",
+            " OR ".join(f'"{term}"' for term in search_terms),
+        )
 
 
 class FakeExtractor:
@@ -51,9 +60,13 @@ def test_v2_pipeline_deduplicates_and_classifies_target_evidence() -> None:
     result = pipeline.analyse("Example Ltd", ticker="EXM")
 
     assert result.duplicates_removed == 1
-    assert result.articles_eligible == 1
+    assert result.articles_retrieved == 1
     assert result.articles_attempted == 1
+    assert result.articles_relevant == 1
     assert result.analysis_limit == 5
+    assert result.lookback_days == 7
+    assert result.search_strategy == "configured_domains"
+    assert result.search_terms == ("Example Ltd",)
     assert len(result.articles) == 1
     assert "Example Ltd reported" in result.articles[0].evidence
     assert result.articles[0].sentiment.label == "positive"
@@ -72,6 +85,20 @@ def test_evidence_selector_rejects_text_without_target() -> None:
 
     with pytest.raises(EvidenceSelectionError, match="does not mention"):
         selector.select("Example Ltd", "EXM", "Market news", "Another firm gained.")
+
+
+def test_evidence_selector_accepts_selected_news_alias() -> None:
+    selector = TargetEvidenceSelector()
+
+    evidence = selector.select(
+        "International Consolidated Airlines Group S.A.",
+        "IAG.L",
+        "British Airways expands",
+        "British Airways announced new routes.",
+        ("British Airways", "Iberia"),
+    )
+
+    assert "British Airways announced" in evidence
 
 
 def test_v2_pipeline_rejects_articles_unavailable_at_prediction_time() -> None:
@@ -97,12 +124,12 @@ def test_v2_pipeline_rejects_articles_unavailable_at_prediction_time() -> None:
     )
 
     assert result.articles == ()
-    assert result.articles_eligible == 0
+    assert result.articles_retrieved == 0
     assert result.articles_attempted == 0
     assert result.failures[0].stage == "availability"
 
 
-def test_v2_pipeline_reports_eligible_articles_beyond_analysis_limit() -> None:
+def test_v2_pipeline_reports_retrieved_articles_beyond_analysis_limit() -> None:
     provider = FakeProvider(
         [
             Article("First result", "Reuters", "https://example.com/first"),
@@ -118,8 +145,9 @@ def test_v2_pipeline_reports_eligible_articles_beyond_analysis_limit() -> None:
 
     result = pipeline.analyse("Example Ltd", limit=1)
 
-    assert result.articles_eligible == 2
+    assert result.articles_retrieved == 2
     assert result.articles_attempted == 1
+    assert result.articles_relevant == 1
     assert result.analysis_limit == 1
     assert len(result.articles) == 1
 

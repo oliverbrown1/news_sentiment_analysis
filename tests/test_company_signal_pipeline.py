@@ -25,8 +25,8 @@ class FakeNewsAnalyser:
         limit: int = 5,
         lookback_days: int = 7,
         cutoff_date: datetime | None = None,
+        search_terms: tuple[str, ...] | None = None,
     ) -> AnalysisResult:
-        del lookback_days
         assert cutoff_date is not None
         self.cutoff_date = cutoff_date
         article = Article(
@@ -45,9 +45,14 @@ class FakeNewsAnalyser:
                     SentimentResult("positive", 0.9),
                 ),
             ),
-            articles_eligible=1,
+            articles_retrieved=1,
             articles_attempted=1,
+            articles_relevant=1,
             analysis_limit=limit,
+            lookback_days=lookback_days,
+            search_strategy="configured_domains",
+            search_query=f'"{company}"',
+            search_terms=search_terms or (company,),
         )
 
 
@@ -100,8 +105,9 @@ def test_pipeline_collects_typed_signals_and_preserves_evidence() -> None:
         "fundamental",
     }
     assert {item.kind for item in result.evidence} == {"news", "filing"}
-    assert result.news_stats.eligible == 1
+    assert result.news_stats.retrieved == 1
     assert result.news_stats.attempted == 1
+    assert result.news_stats.relevant == 1
     assert result.news_stats.analysed == 1
     assert result.news_stats.limit == 20
     assert result.failures == ()
@@ -173,10 +179,15 @@ def test_bundle_output_is_compact_unless_verbose() -> None:
     verbose = result.to_dict(verbose=True)
 
     assert compact["news_stats"] == {
-        "eligible": 1,
+        "retrieved": 1,
         "attempted": 1,
+        "relevant": 1,
         "analysed": 1,
         "limit": 20,
+        "lookback_days": 7,
+        "strategy": "configured_domains",
+        "query": '"Example Ltd"',
+        "terms": ("Example Ltd",),
     }
     assert "excerpt" not in compact["evidence"][0]
     assert compact["failures"] == []

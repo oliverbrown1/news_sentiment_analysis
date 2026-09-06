@@ -42,8 +42,9 @@ def test_news_signals_aggregate_sentiment_volume_disagreement_and_recency() -> N
                 SentimentResult("neutral", 0.6),
             ),
         ),
-        articles_eligible=2,
+        articles_retrieved=2,
         articles_attempted=2,
+        articles_relevant=2,
         analysis_limit=20,
     )
 
@@ -52,7 +53,8 @@ def test_news_signals_aggregate_sentiment_volume_disagreement_and_recency() -> N
         for signal in calculate_news_signals(result, cutoff_date)
     }
 
-    assert signals["articles_eligible"].value == 2
+    assert signals["articles_retrieved"].value == 2
+    assert signals["articles_relevant"].value == 2
     assert signals["sentiment_score"].value == pytest.approx(0.6)
     assert signals["sentiment_disagreement"].value == 0.5
     assert signals["latest_article_age"].value == 2.0

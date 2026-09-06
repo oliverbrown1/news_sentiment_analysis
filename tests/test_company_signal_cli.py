@@ -45,6 +45,10 @@ def test_company_signal_cli_passes_options_and_controls_detail(
             "14",
             "--news-limit",
             "10",
+            "--news-term",
+            "Example",
+            "--news-term",
+            "Example Products",
             "--price-days",
             "60",
             "--verbose",
@@ -55,6 +59,7 @@ def test_company_signal_cli_passes_options_and_controls_detail(
     assert pipeline.arguments["company"] == "Example Ltd"
     assert pipeline.arguments["news_days"] == 14
     assert pipeline.arguments["news_limit"] == 10
+    assert pipeline.arguments["news_terms"] == ("Example", "Example Products")
     assert pipeline.arguments["price_days"] == 60
     assert isinstance(pipeline.arguments["cutoff_date"], datetime)
     assert pipeline.result.verbose is True

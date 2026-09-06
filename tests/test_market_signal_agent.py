@@ -16,7 +16,9 @@ from market_signal_agent.tools import AgentTools, guard_tools
 class FakeSignals:
     def __init__(self) -> None:
         self.calls: list[tuple[str, tuple[object, ...], dict[str, object]]] = []
-        self.matches = [{"company": "EXAMPLE INC", "ticker": "EXM"}]
+        self.matches = [
+            {"company": "EXAMPLE INC", "ticker": "EXM"}
+        ]
 
     def find_companies(self, *args, **kwargs) -> list[dict[str, str]]:
         self.calls.append(("find", args, kwargs))
@@ -49,14 +51,60 @@ def test_company_selection_verifies_and_binds_canonical_context() -> None:
     }
     assert context.state["company"] == "EXAMPLE INC"
     assert context.state["ticker"] == "EXM"
+    assert "news_terms" not in context.state
     assert context.state["company_verified"] is True
+
+
+def test_company_selection_preserves_exchange_suffix() -> None:
+    signals = FakeSignals()
+    signals.matches = [
+        {
+            "company": "International Consolidated Airlines Group, S.A.",
+            "ticker": "IAG.L",
+        }
+    ]
+    context = SimpleNamespace(state={"company_verified": False})
+
+    result = AgentTools(signals).select_company(
+        "International Airlines Group", context, ticker="IAG.L"
+    )
+
+    assert result["ticker"] == "IAG.L"
+    assert context.state["ticker"] == "IAG.L"
+    assert "news_terms" not in context.state
+    assert context.state["company_verified"] is True
+
+
+def test_news_tool_rejects_bare_ticker_as_news_term() -> None:
+    signals = FakeSignals()
+    signals.matches = [
+        {
+            "company": "International Consolidated Airlines Group, S.A.",
+            "ticker": "IAG.L",
+        }
+    ]
+    context = SimpleNamespace(
+        state={
+            "company": "International Consolidated Airlines Group, S.A.",
+            "ticker": "IAG.L",
+            "cutoff_date": "2026-09-06T00:00:00+00:00",
+            "company_verified": True,
+        }
+    )
+    result = AgentTools(signals).get_news_signals(context, news_terms=["IAG"])
+
+    assert result["status"] == "invalid"
+    assert not signals.calls
 
 
 def test_ambiguous_company_does_not_update_context() -> None:
     signals = FakeSignals()
     signals.matches = [
         {"company": "EXAMPLE INC", "ticker": "EXM"},
-        {"company": "EXAMPLE HOLDINGS", "ticker": "EXH"},
+        {
+            "company": "EXAMPLE HOLDINGS",
+            "ticker": "EXH",
+        },
     ]
     context = SimpleNamespace(
         state={"company": "OLD", "ticker": "OLD", "company_verified": True}
@@ -67,6 +115,7 @@ def test_ambiguous_company_does_not_update_context() -> None:
     assert result["status"] == "ambiguous"
     assert context.state["company"] is None
     assert context.state["ticker"] is None
+    assert "news_terms" not in context.state
     assert context.state["company_verified"] is False
 
 
@@ -79,6 +128,26 @@ def test_signal_guard_reports_missing_or_unverified_context() -> None:
     assert result is not None
     assert result["status"] == "blocked"
     assert result["missing"] == ["cutoff_date", "ticker", "verified company"]
+
+
+def test_news_tool_uses_verified_company_and_news_terms() -> None:
+    signals = FakeSignals()
+    context = SimpleNamespace(
+        state={
+            "company": "EXAMPLE INC",
+            "ticker": "EXM",
+            "cutoff_date": "2024-02-20T00:00:00+00:00",
+            "company_verified": True,
+        }
+    )
+
+    AgentTools(signals).get_news_signals(
+        context, news_terms=["Example", "Example Products"]
+    )
+
+    _, args, _ = signals.calls[-1]
+    assert args[0] == "EXAMPLE INC"
+    assert signals.calls[-1][2]["news_terms"] == ("Example", "Example Products")
 
 
 def test_agent_configurations_expose_only_appropriate_tools() -> None:

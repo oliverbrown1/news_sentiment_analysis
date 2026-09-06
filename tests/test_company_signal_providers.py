@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from company_signals.providers import (
     SEC_SUBMISSIONS_URL,
     SEC_TICKERS_URL,
-    SecCompanyResolver,
     SecFilingProvider,
+    YFinanceCompanyResolver,
 )
 
 
@@ -63,17 +64,41 @@ def test_sec_provider_selects_latest_filing_available_before_cutoff_date() -> No
     assert client.headers["User-Agent"] == "Oliver test@example.com"
 
 
-def test_sec_company_resolver_matches_name_and_rejects_wrong_ticker() -> None:
-    client = FakeClient(
-        {
-            SEC_TICKERS_URL: {
-                "0": {"title": "NVIDIA CORP", "ticker": "NVDA", "cik_str": 1},
-                "1": {"title": "TESLA INC", "ticker": "TSLA", "cik_str": 2},
-            }
-        }
-    )
-    resolver = SecCompanyResolver("Oliver test@example.com", client)
+def test_yfinance_company_resolver_accepts_exchange_qualified_ticker() -> None:
+    calls: list[str] = []
 
-    assert resolver.find("NVIDIA", "nvda")[0].ticker == "NVDA"
-    assert resolver.find("NVDA")[0].company == "NVIDIA CORP"
-    assert resolver.find("NVIDIA", "TSLA") == []
+    def searcher(query: str, **kwargs: object) -> object:
+        del kwargs
+        calls.append(query)
+        return SimpleNamespace(
+            quotes=[
+                {
+                    "quoteType": "EQUITY",
+                    "symbol": "IAG.L",
+                    "longname": "International Consolidated Airlines Group, S.A.",
+                }
+            ]
+        )
+
+    resolver = YFinanceCompanyResolver(searcher)
+    match = resolver.find("International Airlines Group", "iag.l")[0]
+
+    assert calls == ["IAG.L"]
+    assert match.company == "International Consolidated Airlines Group, S.A."
+    assert match.ticker == "IAG.L"
+
+
+def test_yfinance_company_resolver_rejects_mismatched_company_and_ticker() -> None:
+    resolver = YFinanceCompanyResolver(
+        lambda query, **kwargs: SimpleNamespace(
+            quotes=[
+                {
+                    "quoteType": "EQUITY",
+                    "symbol": "IAG",
+                    "longname": "IAMGOLD Corporation",
+                }
+            ]
+        )
+    )
+
+    assert resolver.find("International Airlines Group", "IAG") == []
