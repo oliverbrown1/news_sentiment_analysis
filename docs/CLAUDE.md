@@ -1,6 +1,6 @@
 # News Sentiment Analysis: Project Guide
 
-Last reviewed: 2026-09-06
+Last reviewed: 2026-09-07
 
 ## Purpose
 
@@ -17,6 +17,8 @@ predictive-performance claims until leakage-safe evaluation and backtesting exis
 ```text
 src/
   eval/
+    agent_eval.py          # frozen-input ADK return-forecast evaluation
+    market_dataset.py      # recent headline dataset and return targets
     sentiment_eval.py      # FinEntity semantic-sentiment evaluation
     market_eval.py         # FinMarBa market-direction evaluation
     metrics.py             # shared classification, calibration and latency metrics
@@ -31,6 +33,7 @@ src/
 tests/                     # offline pytest suite for all packages
 data/finentity.json        # pinned entity-level sentiment benchmark
 data/finmarba.csv          # pinned released market-direction subset
+data/market_eval_seed.json # bounded recent-market collection manifest
 reports/                   # generated evaluation reports
 ```
 
@@ -108,6 +111,14 @@ as market direction. It deliberately uses no price, date, fundamental, or agent
 inputs. The pinned report records 46.67% accuracy, 45.66% macro F1, and 50.00%
 expected calibration error.
 
+`eval.market_dataset` uses the recent-market seed to collect real headline
+metadata directly from NewsAPI. It creates one example per headline and labels
+it with the next-session Yahoo Finance return plus ticker-specific historical
+return thresholds; it does not run article extraction or sentiment inference.
+`eval.agent_eval` passes each fixed headline to a fresh ADK session with only
+market and filing tools, then reports return MAE, sign accuracy, derived-class
+metrics, failures, latency, and selected review samples.
+
 ## Commands
 
 ```bash
@@ -121,9 +132,17 @@ uv run company-signals collect --company "NVIDIA" --ticker NVDA --cutoff-date 20
 uv run company-signals collect --company "International Airlines Group" --ticker IAG.L --cutoff-date 2026-09-06 --news-term "British Airways" --news-term "Iberia"
 uv run market-signal-agent chat
 
-uv run news-signal-eval --system v1 --output reports/finentity-sentiment-v1.json
-uv run news-signal-eval --system v2 --output reports/finentity-sentiment-v2.json
-uv run news-signal-eval --task market --system v2 --output reports/finmarba-market-sentiment-v2.json
+uv run news-signal-eval --system v1
+uv run news-signal-eval --system v2
+uv run news-signal-eval --task market --system v2
+
+# Shows the collection size and maximum NewsAPI calls without making requests.
+uv run market-eval-build
+
+# Run these only after intentionally authorising provider and model usage.
+uv run market-eval-build --execute
+uv run news-signal-eval --task agent --system agent  # saves the default review report
+uv run news-signal-eval --task agent --system agent --all  # saves the full report
 uv run pytest
 ```
 
@@ -149,7 +168,7 @@ allowed. News terms are request parameters and are not stored in agent state.
 
 ## Configuration
 
-- `NEWS_API_KEY`: required for live news analysis, never for evaluation.
+- `NEWS_API_KEY`: required for live news analysis and `market-eval-build --execute`.
 - `NEWS_LOOKBACK_DAYS`: positive integer, default `7`.
 - `SENTIMENT_MODEL`: optional V1 Hugging Face model identifier.
 - `V2_SENTIMENT_MODEL`: optional V2 Hugging Face model identifier.
@@ -180,8 +199,9 @@ downloaded articles, or model weights.
 - NewsAPI coverage and publisher extraction remain externally constrained.
 - Target evidence selection is a deterministic baseline.
 - FinEntity evaluates sentiment; the current FinMarBa evaluator still evaluates direction.
-- Agent return regression and derived FinMarBa-class metrics remain Step 8 work.
+- The recent agent dataset and baseline report do not exist until the guarded builder and evaluator are explicitly executed.
 - There is no HTTP API, deployment, market backtest, cache, persistence, or tracing yet.
 
-Continue with one numbered step from `docs/PLAN.MD` at a time. Steps 1-6 are
-implemented; Step 8 is the next evaluation change.
+Continue with one numbered step from `docs/PLAN.MD` at a time. Step 8's offline
+implementation is complete; its provider-backed collection and agent baseline
+run remain intentionally pending.

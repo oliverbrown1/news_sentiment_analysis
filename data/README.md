@@ -26,3 +26,7 @@ is not publicly included in this file.
 
 The CSV is retained unchanged. `market_eval` reports ticker mentions without a
 corresponding label and excludes only those unlabelled mentions from evaluation.
+
+FinMarBa has limitation that 2012+ data is not publicly available, while NewsAPI goes back 5 years only.
+
+**Workaround:** Custom dataset created using NewsAPI, seed using `uv run market-eval-build`, which generates `recent_market_headlines.jsonl` using `market_eval_seed.json`.
