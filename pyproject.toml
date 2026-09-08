@@ -30,6 +30,7 @@ news-signal = "news_signal_v2.entrypoints.cli:main"
 news-signal-v1 = "news_signal_v1.entrypoints.cli:main"
 news-signal-v2 = "news_signal_v2.entrypoints.cli:main"
 news-signal-eval = "eval.cli:main"
+market-eval-build = "eval.seed_cli:main"
 company-signals = "company_signals.entrypoints.cli:main"
 market-signal-agent = "market_signal_agent.entrypoints.cli:main"
 

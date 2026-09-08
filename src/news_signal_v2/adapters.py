@@ -91,8 +91,15 @@ class NewsApiProvider:
         try:
             response = self._client.get(self._api_url, params=params)
             response.raise_for_status()
-        except httpx.HTTPError as exc:
-            raise NewsProviderError("NewsAPI request failed") from exc
+        except httpx.HTTPStatusError as exc:
+            message = _error_message(exc.response)
+            raise NewsProviderError(
+                f"NewsAPI request failed with HTTP {exc.response.status_code}: {message}"
+            ) from exc
+        except httpx.RequestError as exc:
+            raise NewsProviderError(
+                f"NewsAPI request failed before receiving a response: {type(exc).__name__}"
+            ) from exc
 
         try:
             payload = response.json()
@@ -101,7 +108,10 @@ class NewsApiProvider:
         if not isinstance(payload, dict):
             raise NewsProviderError("NewsAPI response must be an object")
         if payload.get("status") != "ok":
-            raise NewsProviderError(str(payload.get("message") or "NewsAPI returned an error"))
+            raise NewsProviderError(
+                f"NewsAPI returned an error: "
+                f"{payload.get('message') or 'unknown provider error'}"
+            )
         articles = payload.get("articles")
         if not isinstance(articles, list):
             raise NewsProviderError("NewsAPI response did not contain an article list")
@@ -140,6 +150,16 @@ class NewsApiProvider:
             author=str(author) if author else None,
             description=str(description) if description else None,
         )
+
+
+def _error_message(response: httpx.Response) -> str:
+    try:
+        payload = response.json()
+    except ValueError:
+        return response.reason_phrase or "unknown provider error"
+    if isinstance(payload, dict) and payload.get("message"):
+        return str(payload["message"])
+    return response.reason_phrase or "unknown provider error"
 
 
 class TrafilaturaArticleExtractor:

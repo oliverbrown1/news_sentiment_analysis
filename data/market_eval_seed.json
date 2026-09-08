@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "description": "Recent cross-market company and cutoff pairs for the first agent evaluation dataset.",
+  "seeds": [
+    {
+      "seed_id": "2026-08-25-aapl",
+      "company": "Apple Inc.",
+      "ticker": "AAPL",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["Apple", "iPhone"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-nvda",
+      "company": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["NVIDIA"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-jpm",
+      "company": "JPMorgan Chase & Co.",
+      "ticker": "JPM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["JPMorgan Chase", "JPMorgan"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-xom",
+      "company": "Exxon Mobil Corporation",
+      "ticker": "XOM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["Exxon Mobil"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-iag",
+      "company": "International Consolidated Airlines Group, S.A.",
+      "ticker": "IAG.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["International Airlines Group", "British Airways", "Iberia"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-rr",
+      "company": "Rolls-Royce Holdings plc",
+      "ticker": "RR.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["Rolls-Royce Holdings", "Rolls-Royce aerospace"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-sap",
+      "company": "SAP SE",
+      "ticker": "SAP.DE",
+      "benchmark": "^GDAXI",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["SAP SE", "SAP software"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-08-25-toyota",
+      "company": "Toyota Motor Corporation",
+      "ticker": "7203.T",
+      "benchmark": "^N225",
+      "cutoff_date": "2026-08-25T00:00:00Z",
+      "news_terms": ["Toyota Motor"],
+      "review": true
+    },
+    {
+      "seed_id": "2026-09-01-aapl",
+      "company": "Apple Inc.",
+      "ticker": "AAPL",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["Apple", "iPhone"]
+    },
+    {
+      "seed_id": "2026-09-01-nvda",
+      "company": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["NVIDIA"]
+    },
+    {
+      "seed_id": "2026-09-01-jpm",
+      "company": "JPMorgan Chase & Co.",
+      "ticker": "JPM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["JPMorgan Chase", "JPMorgan"]
+    },
+    {
+      "seed_id": "2026-09-01-xom",
+      "company": "Exxon Mobil Corporation",
+      "ticker": "XOM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["Exxon Mobil"]
+    },
+    {
+      "seed_id": "2026-09-01-iag",
+      "company": "International Consolidated Airlines Group, S.A.",
+      "ticker": "IAG.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["International Airlines Group", "British Airways", "Iberia"]
+    },
+    {
+      "seed_id": "2026-09-01-rr",
+      "company": "Rolls-Royce Holdings plc",
+      "ticker": "RR.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["Rolls-Royce Holdings", "Rolls-Royce aerospace"]
+    },
+    {
+      "seed_id": "2026-09-01-sap",
+      "company": "SAP SE",
+      "ticker": "SAP.DE",
+      "benchmark": "^GDAXI",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["SAP SE", "SAP software"]
+    },
+    {
+      "seed_id": "2026-09-01-toyota",
+      "company": "Toyota Motor Corporation",
+      "ticker": "7203.T",
+      "benchmark": "^N225",
+      "cutoff_date": "2026-09-01T00:00:00Z",
+      "news_terms": ["Toyota Motor"]
+    },
+    {
+      "seed_id": "2026-09-04-aapl",
+      "company": "Apple Inc.",
+      "ticker": "AAPL",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["Apple", "iPhone"]
+    },
+    {
+      "seed_id": "2026-09-04-nvda",
+      "company": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["NVIDIA"]
+    },
+    {
+      "seed_id": "2026-09-04-jpm",
+      "company": "JPMorgan Chase & Co.",
+      "ticker": "JPM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["JPMorgan Chase", "JPMorgan"]
+    },
+    {
+      "seed_id": "2026-09-04-xom",
+      "company": "Exxon Mobil Corporation",
+      "ticker": "XOM",
+      "benchmark": "SPY",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["Exxon Mobil"]
+    },
+    {
+      "seed_id": "2026-09-04-iag",
+      "company": "International Consolidated Airlines Group, S.A.",
+      "ticker": "IAG.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["International Airlines Group", "British Airways", "Iberia"]
+    },
+    {
+      "seed_id": "2026-09-04-rr",
+      "company": "Rolls-Royce Holdings plc",
+      "ticker": "RR.L",
+      "benchmark": "^FTSE",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["Rolls-Royce Holdings", "Rolls-Royce aerospace"]
+    },
+    {
+      "seed_id": "2026-09-04-sap",
+      "company": "SAP SE",
+      "ticker": "SAP.DE",
+      "benchmark": "^GDAXI",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["SAP SE", "SAP software"]
+    },
+    {
+      "seed_id": "2026-09-04-toyota",
+      "company": "Toyota Motor Corporation",
+      "ticker": "7203.T",
+      "benchmark": "^N225",
+      "cutoff_date": "2026-09-04T00:00:00Z",
+      "news_terms": ["Toyota Motor"]
+    }
+  ]
+}

@@ -1,0 +1,400 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-09-08T20:03:54.507065+00:00",
+  "task": {
+    "name": "headline-level next-trading-day return forecasting",
+    "input": "one real headline plus point-in-time market and filing tools",
+    "target": "next trading session close versus the reference session close",
+    "return_unit": "decimal",
+    "class_thresholds": "ticker-specific 30th and 60th percentiles of prior daily returns"
+  },
+  "dataset": {
+    "name": "recent market headline dataset",
+    "path": "data/recent_market_headlines.jsonl",
+    "sha256": "9756f44f3d08fb06c9121bdbfbf9f412cc4fe571e9feb5f139765303dd4fad49",
+    "generated_at": "2026-09-08T14:13:01.189294+00:00",
+    "seed_path": "data/market_eval_seed.json",
+    "seed_sha256": "ff99747f5a74d6416eb0193c9d625a6f76024ef57a4d991f06d0c5a612accabe",
+    "examples": 133,
+    "examples_selected": 8,
+    "build_failures": 8,
+    "date_start": "2026-08-18T06:18:46+00:00",
+    "date_end": "2026-09-03T19:00:59+00:00"
+  },
+  "model": {
+    "system": "market-signal-agent",
+    "name": "gemini-3.8-flash"
+  },
+  "metrics": {
+    "mean_absolute_error": 0.006863876135822364,
+    "directional_accuracy": 0.5,
+    "failure_rate": 0.0,
+    "derived_classification": {
+      "evaluated_examples": 8,
+      "accuracy": 0.625,
+      "macro_f1": 0.25641025641025644,
+      "per_class": {
+        "negative": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 2,
+          "predicted": 0
+        },
+        "neutral": {
+          "precision": 0.625,
+          "recall": 1.0,
+          "f1": 0.7692307692307693,
+          "support": 5,
+          "predicted": 8
+        },
+        "positive": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 1,
+          "predicted": 0
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "negative",
+          "neutral",
+          "positive"
+        ],
+        "rows": [
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ]
+      }
+    }
+  },
+  "review_samples": [
+    {
+      "example_id": "c42a38fceeb8942d",
+      "ticker": "AAPL",
+      "headline": "Walmart is giving shoppers something they've wanted for years: Apple Pay",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": 0.0025,
+      "target_return": 0.0032002269754076718,
+      "thesis": "Walmart ending its multi-year resistance and accepting Apple Pay is an incremental positive catalyst for Apple Services and user engagement in retail payments. Although the fee revenue per transaction is modest relative to Apple's multi-trillion-dollar scale, removing the largest remaining holdout provides positive sentiment. Following a -1.75% 1-day dip amidst solid 5-day benchmark-relative outperformance (+3.94%), AAPL is expected to see a slight positive rebound over the next trading day.",
+      "risks": [
+        "Apple Pay transaction fee economics contribute a relatively modest fraction of Apple's total corporate revenue, limiting direct valuation impact.",
+        "Broader market fluctuations and tech sector trends could override modest single-stock retail headlines.",
+        "Below-average trading volume (relative_volume_20d of 0.77) indicates limited institutional urgency on payment partnership news."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://www.businessinsider.com/walmart-start-accepting-tap-pay-options-stores-clubs-apple-google-2026-8",
+          "reason": "Walmart is ending its long-standing holdout by rolling out Apple Pay acceptance across its stores and clubs, expanding Apple Pay's reach to the largest U.S. retailer."
+        },
+        {
+          "source": "market",
+          "reference": "return_1d",
+          "reason": "AAPL declined -1.75% on the prior trading day, setting up a modest rebound opportunity on positive ecosystem news."
+        },
+        {
+          "source": "market",
+          "reference": "benchmark_relative_return_5d",
+          "reason": "AAPL has demonstrated solid 5-day relative strength against its benchmark, outperforming by +3.94%."
+        },
+        {
+          "source": "market",
+          "reference": "relative_volume_20d",
+          "reason": "Trading activity has been subdued with 20-day relative volume at 0.77, suggesting muted broader momentum."
+        },
+        {
+          "source": "filing",
+          "reference": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020/aapl-20260627.htm",
+          "reason": "Apple's latest Form 10-Q was filed on 2026-07-31, providing the underlying fundamental baseline."
+        }
+      ]
+    },
+    {
+      "example_id": "13834c32bd360d8d",
+      "ticker": "NVDA",
+      "headline": "'Big Short' investor Michael Burry unpacks 'serious competition' for Nvidia that he thinks could shake up the AI trade",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": -0.0035,
+      "target_return": -0.003263428309640881,
+      "thesis": "High-profile commentary from Michael Burry highlighting emerging competition for Nvidia introduces mild sentiment headwinds, reinforcing recent short-term softness reflected in the -2.34% 1-day return (return_1d). However, strong medium-term performance (+6.01% return_20d) and below-average trading volume (relative_volume_20d of 0.855) suggest the headline will exert only modest pressure rather than trigger a sharp selloff. A slightly negative next-day return of -0.35% is expected as the market digests the narrative.",
+      "risks": [
+        "Michael Burry's commentary is opinion-based rather than fundamental, meaning market impact could quickly fade in favor of broader AI momentum.",
+        "Dip-buying after the 1-day drop of -2.34% could reverse near-term weakness into an intraday rebound.",
+        "Broader semiconductor market volatility could amplify price moves beyond commentary-driven expectations."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://www.businessinsider.com/big-short-michael-burry-nvidia-ai-stocks-etched-competition-2026-8",
+          "reason": "Headline highlights Michael Burry warning of 'serious competition' for Nvidia that could shake up the AI trade, creating cautious headline sentiment around Nvidia's hardware dominance."
+        },
+        {
+          "source": "market",
+          "reference": "return_1d",
+          "reason": "Nvidia experienced a 1-day return of -2.34%, reflecting short-term downward momentum leading into the trading day."
+        },
+        {
+          "source": "market",
+          "reference": "return_20d",
+          "reason": "Nvidia maintained a positive 20-day return of 6.01% and 5-day benchmark relative return of 1.43%, suggesting broader trend resilience against commentary-driven noise."
+        },
+        {
+          "source": "filing",
+          "reference": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000069/nvda-20260817.htm",
+          "reason": "An 8-K filing was submitted 2.19 days prior to the cutoff without indication of emergency operational disruption."
+        }
+      ]
+    },
+    {
+      "example_id": "a3d5565c3d9c9d95",
+      "ticker": "JPM",
+      "headline": "JPMorgan says be ready to sell stocks as technical warnings pile up heading into September",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": -0.001,
+      "target_return": 0.0008417401740750119,
+      "thesis": "The reported headline highlights cautious equity market technical analysis from JPMorgan's strategists rather than company-specific operational news. In conjunction with recent 5-day underperformance (-3.10% absolute, -1.74% relative to benchmark) and flat 1-day momentum (+0.01%), the evidence supports a cautious, near-zero return expectation of -0.10% over the next trading day.",
+      "risks": [
+        "Macro strategist commentary does not reflect firm-level fundamentals and may have minimal direct impact on JPM equity price.",
+        "A broader equity market rebound could quickly lift large-cap financials despite cautious seasonal positioning.",
+        "Elevated 20-day relative volume (1.31x) could drive higher-than-usual price volatility."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://www.businessinsider.com/stock-market-outlook-sell-stocks-signal-sp500-technical-analysis-jpmorgan-2026-8",
+          "reason": "JPMorgan equity strategists warned of technical weakness heading into September; while indicative of cautious market sentiment, it reflects routine sell-side research rather than direct fundamental impact on JPM."
+        },
+        {
+          "source": "market",
+          "reference": "return_5d",
+          "reason": "JPM recorded a 5-day return of -3.10%, pointing to negative short-term momentum."
+        },
+        {
+          "source": "market",
+          "reference": "benchmark_relative_return_5d",
+          "reason": "JPM underperformed its benchmark by -1.74% over the prior 5 days."
+        },
+        {
+          "source": "market",
+          "reference": "return_1d",
+          "reason": "The 1-day return was flat (+0.0085%), indicating price stabilization following recent pullbacks."
+        }
+      ]
+    },
+    {
+      "example_id": "f52add9935a8b672",
+      "ticker": "XOM",
+      "headline": "Chevron vs. Exxon Mobil: The Better Energy Stock for the Next 5 Years",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": 0.001,
+      "target_return": -0.006259363974342125,
+      "thesis": "Exxon Mobil demonstrates solid intermediate momentum (+3.14% over 5 days and +6.68% over 20 days) while outperforming the benchmark. The 24/7 Wall St. article offers an editorial multi-year comparison against Chevron without any immediate fundamental catalyst. Following a modest 1-day consolidation (-0.48%), price action is expected to remain relatively flat with a minor positive drift of 0.10%.",
+      "risks": [
+        "Broader energy market and crude oil price volatility can disrupt short-term price stability.",
+        "Potential profit-taking or mean reversion following strong 20-day outperformance (+6.68%).",
+        "The news source provides no actionable near-term catalyst to drive price action."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://247wallst.com/investing/2026/08/20/chevron-vs-exxon-mobil-the-better-energy-stock-for-the-next-5-years/",
+          "reason": "The headline \"Chevron vs. Exxon Mobil: The Better Energy Stock for the Next 5 Years\" is a long-term comparative commentary that provides no new material catalysts or short-term operational updates."
+        },
+        {
+          "source": "market",
+          "reference": "return_5d",
+          "reason": "5-day price return of +3.14% and 20-day return of +6.68% reflect a steady intermediate uptrend."
+        },
+        {
+          "source": "market",
+          "reference": "benchmark_relative_return_5d",
+          "reason": "Benchmark-relative 5-day return of +3.59% indicates strong sector/market outperformance heading into the session."
+        },
+        {
+          "source": "market",
+          "reference": "return_1d",
+          "reason": "1-day return of -0.48% shows a slight pause in momentum on average volume (0.96x relative volume)."
+        }
+      ]
+    },
+    {
+      "example_id": "e5a92f6ae46316fa",
+      "ticker": "IAG.L",
+      "headline": "Best ways to redeem Avios through Aer Lingus, British Airways and Iberia",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": 0.0005,
+      "target_return": 0.005880969099283595,
+      "thesis": "The available headline from The Points Guy is a consumer loyalty redemption guide with no material financial impact on International Consolidated Airlines Group. Meanwhile, price momentum is neutral (5-day return of +0.05%) and trading volume is subdued (relative_volume_20d of 0.45). With no significant catalyst and contradictory/weak evidence, the expected next-day return is projected near zero (+0.05%).",
+      "risks": [
+        "Broad airline industry headwinds such as jet fuel price volatility or shifting consumer travel demand.",
+        "Continued downward momentum following the previous session's 1.58% decline.",
+        "General UK and European equity market volatility influencing FTSE-listed travel stocks."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://thepointsguy.com/loyalty-programs/best-ways-redeem-avios-aer-lingus-british-airways-iberia/",
+          "reason": "The headline is a consumer travel guide on redeeming Avios points with Aer Lingus, British Airways, and Iberia, providing no material financial or corporate catalyst."
+        },
+        {
+          "source": "market",
+          "reference": "return_1d",
+          "reason": "The 1-day return was -0.0158 (-1.58%), showing a slight short-term pullback."
+        },
+        {
+          "source": "market",
+          "reference": "relative_volume_20d",
+          "reason": "Relative volume over 20 days is 0.449, indicating below-average market activity and absence of strong institutional conviction."
+        },
+        {
+          "source": "market",
+          "reference": "return_5d",
+          "reason": "The 5-day return stands at +0.0005 (+0.05%), reflecting largely sideways, range-bound performance."
+        }
+      ]
+    },
+    {
+      "example_id": "bf4785d2e8d1ad4b",
+      "ticker": "SAP.DE",
+      "headline": "How SAP SE (SAP) Is Monetizing AI Through Joule and Data Cloud",
+      "output_valid": true,
+      "ticker_preserved": true,
+      "citations_present": true,
+      "predicted_return": 0.002,
+      "target_return": -0.009294819779596897,
+      "thesis": "SAP SE exhibits sustained positive momentum with a 5-day return of 4.43% and 1-day return of 1.34%, supported by positive thematic coverage around AI monetization via Joule and Data Cloud. However, with relative volume at 0.6162 and an extended 20-day run of 34.18%, the headline is unlikely to drive significant fresh upside, warranting a modest positive forecast of +0.20% over the next trading day.",
+      "risks": [
+        "Extended 20-day advance (return_20d of 0.3418) leaves the stock vulnerable to short-term profit-taking or mean reversion.",
+        "Low relative trading volume (relative_volume_20d of 0.6162) indicates limited institutional buying pressure behind recent moves.",
+        "The news coverage provides general narrative support rather than quantifiable new guidance or earnings surprises."
+      ],
+      "evidence": [
+        {
+          "source": "headline",
+          "reference": "https://finance.yahoo.com/technology/ai/articles/sap-se-sap-monetizing-ai-112052918.html",
+          "reason": "The headline 'How SAP SE (SAP) Is Monetizing AI Through Joule and Data Cloud' reflects positive thematic coverage of SAP's enterprise AI offerings, though it serves primarily as descriptive analysis rather than a fresh unexpected financial catalyst."
+        },
+        {
+          "source": "market",
+          "reference": "return_5d",
+          "reason": "SAP shows solid short-term momentum with return_5d of 0.0443 and benchmark_relative_return_5d of 0.0558, extending a strong return_20d of 0.3418."
+        },
+        {
+          "source": "market",
+          "reference": "relative_volume_20d",
+          "reason": "Trading activity remains subdued with relative_volume_20d at 0.6162 alongside volatility_20d of 0.0253, pointing toward consolidation rather than an aggressive breakout."
+        }
+      ]
+    }
+  ],
+  "largest_errors": [
+    {
+      "example_id": "3c7d11b628cecc78",
+      "ticker": "AAPL",
+      "published_at": "2026-08-18T17:16:49+00:00",
+      "headline": "Apple overhauls Europe app store fees to resolve payments clash",
+      "predicted_return": 0.0015,
+      "target_return": 0.021933322000267097,
+      "absolute_error": 0.020433322000267096
+    },
+    {
+      "example_id": "bf4785d2e8d1ad4b",
+      "ticker": "SAP.DE",
+      "published_at": "2026-08-24T11:20:52+00:00",
+      "headline": "How SAP SE (SAP) Is Monetizing AI Through Joule and Data Cloud",
+      "predicted_return": 0.002,
+      "target_return": -0.009294819779596897,
+      "absolute_error": 0.011294819779596897
+    },
+    {
+      "example_id": "43e681226fcf4647",
+      "ticker": "AAPL",
+      "published_at": "2026-08-20T20:37:47+00:00",
+      "headline": "You can beat the Peacock price hike with this Apple TV bundle",
+      "predicted_return": 0.0015,
+      "target_return": -0.006263995393247401,
+      "absolute_error": 0.007763995393247401
+    },
+    {
+      "example_id": "f52add9935a8b672",
+      "ticker": "XOM",
+      "published_at": "2026-08-20T17:30:00+00:00",
+      "headline": "Chevron vs. Exxon Mobil: The Better Energy Stock for the Next 5 Years",
+      "predicted_return": 0.001,
+      "target_return": -0.006259363974342125,
+      "absolute_error": 0.007259363974342125
+    },
+    {
+      "example_id": "e5a92f6ae46316fa",
+      "ticker": "IAG.L",
+      "published_at": "2026-08-18T15:00:55+00:00",
+      "headline": "Best ways to redeem Avios through Aer Lingus, British Airways and Iberia",
+      "predicted_return": 0.0005,
+      "target_return": 0.005880969099283595,
+      "absolute_error": 0.005380969099283595
+    },
+    {
+      "example_id": "a3d5565c3d9c9d95",
+      "ticker": "JPM",
+      "published_at": "2026-08-24T17:46:35+00:00",
+      "headline": "JPMorgan says be ready to sell stocks as technical warnings pile up heading into September",
+      "predicted_return": -0.001,
+      "target_return": 0.0008417401740750119,
+      "absolute_error": 0.001841740174075012
+    },
+    {
+      "example_id": "c42a38fceeb8942d",
+      "ticker": "AAPL",
+      "published_at": "2026-08-21T15:36:54+00:00",
+      "headline": "Walmart is giving shoppers something they've wanted for years: Apple Pay",
+      "predicted_return": 0.0025,
+      "target_return": 0.0032002269754076718,
+      "absolute_error": 0.0007002269754076717
+    },
+    {
+      "example_id": "13834c32bd360d8d",
+      "ticker": "NVDA",
+      "published_at": "2026-08-19T17:17:31+00:00",
+      "headline": "'Big Short' investor Michael Burry unpacks 'serious competition' for Nvidia that he thinks could shake up the AI trade",
+      "predicted_return": -0.0035,
+      "target_return": -0.003263428309640881,
+      "absolute_error": 0.00023657169035911892
+    }
+  ],
+  "latency": {
+    "examples_succeeded": 8,
+    "mean_seconds_per_example": 7.436224135377415
+  },
+  "failures": [],
+  "environment": {
+    "python": "3.12.12",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "torch": "2.13.0",
+    "transformers": "5.16.1"
+  }
+}

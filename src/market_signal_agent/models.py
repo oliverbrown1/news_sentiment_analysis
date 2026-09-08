@@ -15,6 +15,8 @@ class ForecastRequest(BaseModel):
     cutoff_date: datetime
     company: str | None = None
     headline: str | None = None
+    headline_source: str | None = None
+    headline_url: str | None = None
     forecast_horizon: str = "next trading day"
     benchmark: str = "SPY"
 
@@ -25,7 +27,7 @@ class ForecastRequest(BaseModel):
             raise ValueError("value cannot be empty")
         return value
 
-    @field_validator("company", "headline")
+    @field_validator("company", "headline", "headline_source", "headline_url")
     @classmethod
     def empty_optional_text(cls, value: str | None) -> str | None:
         return value or None

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 from collections.abc import Sequence
 from pathlib import Path
 from time import perf_counter
 from typing import Literal, cast
 
+from eval.agent_eval import AdkAgentSystem, AgentEvaluationReport, evaluate_market_agent
 from eval.arguments import ARGUMENTS
+from eval.market_dataset import load_market_dataset
 from eval.market_eval import MarketEvaluationReport, evaluate_finmarba, load_finmarba
 from eval.sentiment_baseline import SentimentMarketBaseline
 from eval.sentiment_eval import (
@@ -21,9 +24,10 @@ from news_signal_v1.config import load_sentiment_model_name as load_v1_model_nam
 from news_signal_v2.adapters import ModernFinBertSentimentClassifier
 from news_signal_v2.config import load_sentiment_model_name as load_v2_model_name
 from news_signal_v2.pipeline import TargetEvidenceSelector
+from market_signal_agent.config import get_model as get_agent_model
 
-SystemVersion = Literal["v1", "v2"]
-TaskName = Literal["sentiment", "market"]
+SystemVersion = Literal["v1", "v2", "agent"]
+TaskName = Literal["sentiment", "market", "agent"]
 
 
 class V1SentimentSystem:
@@ -62,19 +66,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate a news signal system")
     parser.add_argument(
         "--task",
-        choices=("sentiment", "market"),
+        choices=("sentiment", "market", "agent"),
         default="sentiment",
         help=ARGUMENTS["task"],
     )
     parser.add_argument(
         "--system",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "agent"),
         required=True,
         help=ARGUMENTS["system"],
     )
     parser.add_argument("--dataset", type=Path, help=ARGUMENTS["dataset"])
     parser.add_argument("--model", help=ARGUMENTS["model"])
     parser.add_argument("--output", type=Path, help=ARGUMENTS["output"])
+    scope = parser.add_mutually_exclusive_group()
+    scope.add_argument("--limit", type=int, help=ARGUMENTS["limit"])
+    scope.add_argument("--all", action="store_true", help=ARGUMENTS["all"])
     return parser
 
 
@@ -84,9 +91,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     system_version = cast(SystemVersion, args.system)
     if task == "market" and system_version != "v2":
         raise SystemExit("Market evaluation currently supports only --system v2")
+    if task == "agent" and system_version != "agent":
+        raise SystemExit("Agent evaluation requires --system agent")
+    if task == "sentiment" and system_version == "agent":
+        raise SystemExit("Sentiment evaluation supports only --system v1 or v2")
+    if (args.limit is not None or args.all) and task != "agent":
+        raise SystemExit("--limit and --all are supported only for agent evaluation")
+    if args.limit is not None and args.limit < 1:
+        raise SystemExit("--limit must be at least 1")
 
-    model_name = args.model or _default_model(system_version)
-    if task == "market":
+    model_name = args.model or (
+        get_agent_model() if system_version == "agent" else _default_model(system_version)
+    )
+    if task == "agent":
+        dataset_path = args.dataset or Path("data/recent_market_headlines.jsonl")
+        limit = None if args.all else args.limit or 8
+        report = _evaluate_agent(model_name, dataset_path, limit)
+    elif task == "market":
         dataset_path = args.dataset or Path("data/finmarba.csv")
         report = _evaluate_market(model_name, dataset_path)
     else:
@@ -94,12 +115,35 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = _evaluate_sentiment(system_version, model_name, dataset_path)
 
     output = json.dumps(report.to_dict(), indent=2)
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(f"{output}\n", encoding="utf-8")
+    output_path = args.output or _default_output_path(
+        task, system_version, full_agent_run=args.all
+    )
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(f"{output}\n", encoding="utf-8")
     else:
         print(output)
+
     return 0
+
+
+def _default_output_path(
+    task: TaskName,
+    system: SystemVersion,
+    *,
+    full_agent_run: bool,
+) -> Path:
+    if task == "sentiment":
+        filename = f"finentity-sentiment-{system}.json"
+    elif task == "market":
+        filename = f"finmarba-market-sentiment-{system}.json"
+    else:
+        filename = (
+            "market-agent-headline-v1.json"
+            if full_agent_run
+            else "market-agent-headline-review-v1.json"
+        )
+    return Path("reports") / filename
 
 
 def _evaluate_sentiment(
@@ -134,6 +178,20 @@ def _evaluate_market(model_name: str, dataset_path: Path) -> MarketEvaluationRep
         model_name=model_name,
         model_revision=classifier.model_revision,
         model_load_seconds=model_load_seconds,
+    )
+
+
+def _evaluate_agent(
+    model_name: str, dataset_path: Path, limit: int | None
+) -> AgentEvaluationReport:
+    return asyncio.run(
+        evaluate_market_agent(
+            AdkAgentSystem(model_name),
+            load_market_dataset(dataset_path),
+            system_name="market-signal-agent",
+            model_name=model_name,
+            limit=limit,
+        )
     )
 
 
